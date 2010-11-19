@@ -25,7 +25,9 @@ QT       += core gui opengl
 TARGET = xmVent
 TEMPLATE = app
 
-ICON = qvent.icns
+#TRANSLATIONS = xmVent_fr.ts
+
+ICON = xmVent.icns
 
 # platform specific: Linux, MacOSX, MingW
 LIBS += -L../build-debug-xmVent-lib -lxmVent

@@ -1,6 +1,6 @@
 <RCC>
     <qresource prefix="/">
         <file>images/open.png</file>
-        <file>images/qvent.png</file>
+        <file>images/xmVent.png</file>
     </qresource>
 </RCC>

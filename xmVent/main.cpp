@@ -27,7 +27,7 @@
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-    a.setWindowIcon( QIcon(":/images/qvent.png") );     // TODO: not working?
+    a.setWindowIcon( QIcon(":/images/xmVent.png") );
     MainWindow w;
     w.show();
 
