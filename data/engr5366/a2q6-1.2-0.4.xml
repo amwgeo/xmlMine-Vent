@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ventNetwork xmlns="http://xmlmine.org/xml/ventilation/" version="0.1">
+	<title>2009W-ENGR5366 A2Q6-1.2-0.4 (Option 6)</title>
+	<desc>Unregulated Ventilation + Booster, FSP16 = 1.2kPa, FSP15 = 0.4kPa</desc>
+	<fanList>
+		<!-- NOTE: using fan static pressure in Pascals -->
+		<fan id="main_fan" pressure="1200" />
+		<fan id="booster_fan" pressure="400" />
+	</fanList>
+	<junctionList>
+		<junction id="1" x="100" y="200" z="100" surface="true" pressure="0" />
+		<junction id="2" x="100" y="200" z="0" />
+		<junction id="3" x="0" y="200" z="0" />
+		<junction id="4" x="0" y="100" z="0" />
+		<junction id="5" x="100" y="100" z="0" />
+		<junction id="6" x="300" y="200" z="0" />
+		<junction id="7" x="400" y="200" z="0" />
+		<junction id="8" x="400" y="100" z="0" />
+		<junction id="9" x="200" y="100" z="0" />
+		<junction id="10" x="200" y="200" z="0" />
+		<junction id="11" x="100" y="100" z="100" surface="true" />
+		<junction id="12" x="300" y="0" z="0" />
+		<junction id="13" x="200" y="0" z="0" />
+	</junctionList>
+	<branchList>
+		<branch id="freshair1" from="1" to="2" resistance="0.2" />		<branch id="branch2" from="2" to="3" resistance="0.25" />		<branch id="workplace3" from="3" to="4" resistance="2" flow="10" />		<branch id="branch4" from="4" to="5" resistance="0.3" />		<branch id="branch5" from="2" to="5" resistance="20" />		<branch id="branch6" from="2" to="10" resistance="0.05" />		<branch id="branch7" from="10" to="6" resistance="0.1" />		<branch id="branch8" from="6" to="7" resistance="0.1" />		<branch id="workplace9" from="7" to="8" resistance="2" flow="11" />		<branch id="branch10" from="8" to="9" resistance="0.15" />		<branch id="branch11" from="6" to="12" resistance="0.16" />		<branch id="workplace12" from="12" to="13" resistance="2" flow="12" />		<branch id="branch13" from="13" to="9" resistance="0.2" />		<branch id="branch14" from="10" to="9" resistance="15" />		<branch id="branch15" from="9" to="5" resistance="0.25" fan="#booster_fan" />		<branch id="returnair16" from="5" to="11" resistance="0.3" fan="#main_fan" />		<!--branch id="branch17" from="11" to="1" resistance="0" /-->
+	</branchList>
+</ventNetwork>
