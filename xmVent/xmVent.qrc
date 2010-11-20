@@ -2,5 +2,6 @@
     <qresource prefix="/">
         <file>images/open.png</file>
         <file>images/xmVent.png</file>
+        <file>translation/xmVent.fr.qm</file>
     </qresource>
 </RCC>

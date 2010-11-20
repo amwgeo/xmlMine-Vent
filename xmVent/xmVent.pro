@@ -25,7 +25,7 @@ QT       += core gui opengl
 TARGET = xmVent
 TEMPLATE = app
 
-#TRANSLATIONS = xmVent_fr.ts
+TRANSLATIONS = translation/xmVent.fr.ts
 
 ICON = xmVent.icns
 

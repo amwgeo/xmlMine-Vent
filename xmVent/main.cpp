@@ -22,12 +22,20 @@
  */
 
 #include <QtGui/QApplication>
+#include <QTranslator>
+#include <QLocale>
 #include "mainwindow.h"
 
-int main(int argc, char *argv[])
+int main( int argc, char *argv[] )
 {
-    QApplication a(argc, argv);
-    a.setWindowIcon( QIcon(":/images/xmVent.png") );
+    QApplication a( argc, argv );
+    a.setWindowIcon( QIcon( ":/images/xmVent.png" ) );
+
+    QTranslator t;
+    if( t.load( ":/translation/xmVent." + QLocale::system().name() ) ) {
+        a.installTranslator( &t );
+    }
+
     MainWindow w;
     w.show();
 
