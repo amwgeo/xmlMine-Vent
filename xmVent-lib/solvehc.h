@@ -30,6 +30,15 @@
 #include <QMultiMap>
 #include <QVector>
 
+
+/// Defines a single step while walking through the network
+struct XMVentSolveHCStep {
+    int toNodeId;
+    int branchId;
+    float direction;
+};
+
+
 /// Hardy-Cross Ventilation Network Solver
 class XMVENTSHARED_EXPORT XMVentSolveHC : public QObject
 {
@@ -38,8 +47,7 @@ class XMVENTSHARED_EXPORT XMVentSolveHC : public QObject
 
 protected:
     class XMVentNetwork *m_ventNet;
-    QList<QList<int> > m_meshList;
-    QList<QList<float> > m_meshCoeff;
+    QList<QList<XMVentSolveHCStep> > m_meshList;
 
     void createMesh();
     void flowInitialize();

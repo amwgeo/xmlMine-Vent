@@ -67,9 +67,10 @@ using namespace std;
 
  ******************************************************************************************/
 
+
 /// walk through all dependent branches and sum resistance
 float branchDependentWalk( int branchId,  const QList<XMVentBranch*>& branches,
-                           const QMultiMap<int,QPair<int,int> >& adj, QList<int>& branchAvoid )
+                           const QMultiHash<int,XMVentSolveHCStep>& adj, QList<int>& branchAvoid )
 {
     const XMVentBranch* branch = branches[branchId];
     float resistance = branch->resistance();
@@ -83,11 +84,11 @@ float branchDependentWalk( int branchId,  const QList<XMVentBranch*>& branches,
         int nodeId = ( i==0 ? branch->fromId() : branch->toId() );
 
         // step until end of independent super-branch
-        QList<QPair<int,int> > step = adj.values( nodeId );
+        QList<XMVentSolveHCStep> step = adj.values( nodeId );
         while( 2 == step.size() ) {
-            int stepId = ( step[0].second == lastBranchId ? 1 : 0 );
-            int stepNodeId = step[stepId].first;
-            int stepBranchId = step[stepId].second;
+            int stepId = ( step[0].branchId == lastBranchId ? 1 : 0 );
+            int stepNodeId = step[stepId].toNodeId;
+            int stepBranchId = step[stepId].branchId;
 
             //Q_ASSERT( !branchAvoid.contains( stepBranchId ) );      // branch should not be in branchAvoid
             resistance += branches[ stepBranchId ]->resistance();
@@ -106,7 +107,7 @@ float branchDependentWalk( int branchId,  const QList<XMVentBranch*>& branches,
 
 /// create a list of high-resistance independent seed branches
 QList<int> branchPriority( const QList<XMVentBranch*>& branches,
-                    const QMultiMap<int,QPair<int,int> >& adj,
+                    const QMultiHash<int,XMVentSolveHCStep>& adj,
                     QList<int> branchAvoid = QList<int>() )
 {
     // Insert sort into map (resistance, branchId)
@@ -154,38 +155,71 @@ void addSurfaceJunctions( XMVentNetwork* net )
 
 
 /// create an Adjacency map for nodes including branch numbers
-QMultiMap<int,QPair<int,int> > nodeAdjacency( const QList<class XMVentBranch*>& branches )
+QMultiHash<int,XMVentSolveHCStep> nodeAdjacency( const QList<class XMVentBranch*>& branches )
 {
-    QMultiMap<int,QPair<int,int> > nodeAdjency;
+    QMultiHash<int,XMVentSolveHCStep> nodeAdjacency;
 
     int branchId;
-    QList<XMVentBranch*>::ConstIterator it;
-    for( it = branches.begin(), branchId = 0; it != branches.end(); it++, branchId++ ) {
+    XMVentSolveHCStep step;
+    QList<XMVentBranch*>::ConstIterator itBranch;
+    for( itBranch = branches.begin(), branchId = 0; itBranch != branches.end(); itBranch++, branchId++ ) {
 
-        XMVentBranch* branch = *it;
+        XMVentBranch* branch = *itBranch;
+        step.branchId = branchId;
 
-        // TODO: struct adjacentStep { nodeId, branchId, resitance, branchDirection } ?
-        nodeAdjency.insertMulti( branch->fromId(), QPair<int,int>(branch->toId(), branchId) );
-        nodeAdjency.insertMulti( branch->toId(), QPair<int,int>(branch->fromId(), branchId) );
+        // forward direction
+        step.toNodeId = branch->toId();
+        step.direction = 1.f;
+        nodeAdjacency.insertMulti( branch->fromId(), step );
+
+        // reverse direction
+        step.toNodeId = branch->fromId();
+        step.direction = -1.f;
+        nodeAdjacency.insertMulti( branch->toId(), step );
     }
 
-    return nodeAdjency;
+    qDebug() << "nodeAdjacency";
+    QMultiHash<int,XMVentSolveHCStep>::ConstIterator itHash;
+    for( itHash = nodeAdjacency.begin(); itHash != nodeAdjacency.end(); itHash++ ) {
+        qDebug() << itHash.key() << "\t" << itHash.value().toNodeId << "\t" << itHash.value().branchId << "\t" << itHash.value().direction;
+    }
+
+    return nodeAdjacency;
 }
 
 
-// TODO:AW: MultiMap -> MultiHash, List -> Set ?!
+/// return the coresponding index for a step with a given branchId
+int findBranchId( const QList<XMVentSolveHCStep>& stepList, int branchId )
+{
+    int stepId;
+    QList<XMVentSolveHCStep>::const_iterator itStep;
+    for( itStep = stepList.begin(), stepId = 0; itStep != stepList.end(); itStep++, stepId++ ) {
+        if( itStep->branchId == branchId ) {
+            return stepId;
+        }
+    }
+
+    // couldn't find branchId
+    return -1;
+}
+
+
 /// walk network to find the smallest loop starting with startBranchId and avoiding branchAvoid.
 /// algorithm based on a LIFO stack instead of a recursive algorithm for efficiency
-QList<int> findSmallestClosedWalk( int startBranchId, const XMVentNetwork* net,
-    const QMultiMap<int,QPair<int,int> >& adj, const QList<int> branchAvoid = QList<int>() )
+QList<XMVentSolveHCStep> findSmallestClosedWalk( int startBranchId, const XMVentNetwork* net,
+    const QMultiHash<int,XMVentSolveHCStep>& adj, const QList<int> branchAvoid = QList<int>() )
 {
-    QList<int> branchList, smallestWalk;
+    QList<XMVentSolveHCStep> branchList, smallestWalk;
     QMap<int, int> nodeDistance;                // TODO: does this superseed the avoidBranch or otherwise?
 
     // Seed the stack
-    QList<QList<QPair<int,int> > > stack;
+    QList<QList<XMVentSolveHCStep> > stack;
     stack.append( adj.values( net->m_branch[ startBranchId ]->toId() ) );
-    branchList.append( startBranchId );
+    XMVentSolveHCStep firstStep;
+    firstStep.branchId = startBranchId;
+    firstStep.direction = 1.f;
+    firstStep.toNodeId = net->m_branch[ startBranchId ]->toId();
+    branchList.append( firstStep );
     const int nodeIdStart = net->m_branch[ startBranchId ]->fromId();
     // TODO:AW: nodeDistance here?
 
@@ -198,27 +232,33 @@ QList<int> findSmallestClosedWalk( int startBranchId, const XMVentNetwork* net,
 
         } else {
             // get next step information from stack
-            QPair<int,int> pair = stack.last().last();
+            XMVentSolveHCStep step = stack.last().last();       // TODO:AW: rename pair to something useful
             stack.last().pop_back();
-            int nodeId = pair.first;
-            int branchId = pair.second;
+            //int nodeId = step.toNodeId;
+            //int branchId = step.branchId;
+
+            // skip branch if in branchAvoid
+            if( branchAvoid.contains( step.branchId ) ) {
+                continue;
+            }
 
             // skip branch if already used in branchList or in branchAvoid
-            if( !branchList.contains( branchId ) && !branchAvoid.contains( branchId ) ) {
-                if( nodeId == nodeIdStart ) {
+
+            if( -1 == findBranchId( branchList, step.branchId ) ) {
+                if( step.toNodeId == nodeIdStart ) {
                     // loop detected
                     smallestWalk = branchList;
-                    smallestWalk.append( branchId );
+                    smallestWalk.append( step );
                 } else {
                     // skip if we've already visited this point faster.
-                    if( nodeDistance.value( nodeId, INT_MAX ) >= stack.count() ) {
+                    if( nodeDistance.value( step.toNodeId, INT_MAX ) >= stack.count() ) {
 
                         // do next step only if smaller walk is still possible
                         if( smallestWalk.count() == 0 || (branchList.count()+2) < smallestWalk.count() ) {
                             // append new stack level
-                            stack.append( adj.values( nodeId ) );
-                            branchList.append( branchId );
-                            nodeDistance[ nodeId ] = stack.count();
+                            stack.append( adj.values( step.toNodeId ) );
+                            branchList.append( step );
+                            nodeDistance[ step.toNodeId ] = stack.count();
                         }
                     }
                 }
@@ -230,43 +270,11 @@ QList<int> findSmallestClosedWalk( int startBranchId, const XMVentNetwork* net,
 }
 
 
-QList<QList<float> > meshDirectionCoefficients( const QList<QList<int> >& meshList,
-                                  const QList<XMVentBranch*>& branches )
-{
-    QList<QList<float> > coeff;
-
-    QList<QList<int> >::const_iterator itMesh;
-    for( itMesh = meshList.begin(); itMesh != meshList.end(); itMesh++ ) {
-        coeff.push_back( QList<float>() );    // push an empty list
-        QList<float>& meshCoeff( coeff.last() );
-
-        // populate that list
-        int lastNodeId;
-        bool first = true;
-        QList<int>::const_iterator itBranch;
-        for( itBranch = (*itMesh).begin(); itBranch != (*itMesh).end(); itBranch++) {
-            const XMVentBranch* pBranch = branches[(*itBranch)];
-            if( first ) {
-                lastNodeId = pBranch->toId();
-                meshCoeff.append( 1. );
-                first = false;
-            } else {
-                bool forward = (pBranch->fromId() == lastNodeId);
-                meshCoeff.append( forward ? 1. : -1. );
-                lastNodeId = ( forward ? pBranch->toId() : pBranch->fromId() );
-            }
-        }
-    }
-
-    return coeff;
-}
-
-
 /// create network meshes
 void XMVentSolveHC::createMesh()
 {
     m_meshList.empty();
-    QMultiMap<int,QPair<int,int> > nodeAdj = nodeAdjacency( m_ventNet->m_branch );
+    QMultiHash<int,XMVentSolveHCStep> nodeAdj = nodeAdjacency( m_ventNet->m_branch );
 
     QList<int> branchFixedFlow = m_ventNet->m_fixedFlow.keys();
 
@@ -297,13 +305,11 @@ void XMVentSolveHC::createMesh()
         m_meshList.append( findSmallestClosedWalk( branchId, m_ventNet, nodeAdj, branchAvoid ) );
 
         // remove all newly used branches in walk from branchList
-        QList<int>::const_iterator it;
-        for( it = m_meshList.last().begin(); it != m_meshList.last().end(); it++ ) {
-            branchList.removeAll( *it );
+        QList<XMVentSolveHCStep>::const_iterator itStep;
+        for( itStep = m_meshList.last().begin(); itStep != m_meshList.last().end(); itStep++ ) {
+            branchList.removeAll( itStep->branchId );
         }
     }
-
-    m_meshCoeff = meshDirectionCoefficients( m_meshList, m_ventNet->m_branch );
 }
 
 
@@ -329,10 +335,9 @@ void XMVentSolveHC::flowInitialize()
         }
 
         // for all branches in mesh: flow[branch] += fixed * coeff[branch]
-        QList<int>::const_iterator itBranch;
-        QList<float>::const_iterator itCoeff = m_meshCoeff[i].begin();
-        for( itBranch = m_meshList[i].begin(); itBranch != m_meshList[i].end(); itBranch++, itCoeff++ ) {
-            m_flowList[*itBranch] += fixed * (*itCoeff);
+        QList<XMVentSolveHCStep>::const_iterator itStep;
+        for( itStep = m_meshList[i].begin(); itStep != m_meshList[i].end(); itStep++ ) {
+            m_flowList[ itStep->branchId ] += fixed * itStep->direction;
         }
     }
 }
@@ -345,8 +350,7 @@ struct MeshAdjust {
 
 
 /// calculate mesh pressure imbalance and slope (dP/dQ) for correction
-MeshAdjust pressureAdjustBranch( const QList<float>& flow,
-                                 const QList<int>& mesh, const QList<float>& coeff,
+MeshAdjust pressureAdjustBranch( const QList<float>& flow, const QList<XMVentSolveHCStep>& mesh,
                                  const QList<class XMVentBranch*>& branchList,
                                  const QMap<int,class XMVentFan*>& fanList )
 {
@@ -355,10 +359,10 @@ MeshAdjust pressureAdjustBranch( const QList<float>& flow,
     adj.slope = 0.;
 
     for( int j = 0; j < mesh.size(); j++ ) {    // for each branch in mesh
-        int branchId = mesh[ j ];
+        int branchId = mesh[ j ].branchId;
         const XMVentBranch* branch = branchList[ branchId ];
         float n = branch->n();
-        float q = coeff[ j ] * flow[ branchId ];    // signed flow relative to mesh direction ?
+        float q = mesh[ j ].direction * flow[ branchId ];    // signed flow relative to mesh direction ?
         float rq = pow( fabs(q), n - 1.f) * branch->resistance();
         adj.pressure += rq * q; // pressure += fsp + nvp
         adj.slope += n * rq;   // pressure += slope(fsp) + slope(nvp)
@@ -367,7 +371,7 @@ MeshAdjust pressureAdjustBranch( const QList<float>& flow,
         const XMVentFan* fan = fanList.value( branchId, 0 );
         if( fan ) {
             // TODO:AW: variable pressure fans
-            adj.pressure -= coeff[j] * fan->fixedPressure();
+            adj.pressure -= mesh[ j ].direction * fan->fixedPressure();
         }
     }
 
@@ -378,26 +382,24 @@ MeshAdjust pressureAdjustBranch( const QList<float>& flow,
 /// solve for next Hardy-Cross iteration step
 // TODO:AW: test over relaxation 1 < lambda < 2 to accelerate convergence
 float ventSolveHCIterate( QList<float>& flow, const QList<class XMVentBranch*>& branchList,
-                          const QList<QList<int> >& meshList, const QList<QList<float> >& meshCoeff,
-                          const QMap<int,class XMVentFan*>& fanList, int nMeshBalanced,
-                          float lambda )
+                          const QList<QList<XMVentSolveHCStep> >& meshList, const QMap<int,class XMVentFan*>& fanList,
+                          int nMeshBalanced, float lambda )
 {
     float meshCorrection = 0;
 
     for( int i = 0; i < nMeshBalanced; i++ ) {  // for each mesh, but not fixed-flow meshes
-        QList<int> mesh = meshList[i];
-        QList<float> coeff = meshCoeff[i];
+        QList<XMVentSolveHCStep> mesh = meshList[i];
         // calculate correction
-        MeshAdjust adj = pressureAdjustBranch( flow, mesh, coeff, branchList, fanList );
+        MeshAdjust adjust = pressureAdjustBranch( flow, mesh, branchList, fanList );
 
-        meshCorrection += abs(adj.pressure);
+        meshCorrection += abs( adjust.pressure );
 
         // apply correction
-        if( adj.slope != 0. ) { // TODO:AW: is this okay or should it be a fuzzy test for "too small"?
-            float meshFlowCorrection = - adj.pressure / adj.slope * lambda;
+        if( adjust.slope != 0. ) { // TODO:AW: is this okay or should it be a fuzzy test for "too small"?
+            float meshFlowCorrection = - adjust.pressure / adjust.slope * lambda;
             for( int j = 0; j < mesh.size(); j++ ) {
                 // correction adjusted for branch direction
-                flow[ mesh[ j ] ] += coeff[ j ] * meshFlowCorrection;
+                flow[ mesh[ j ].branchId ] += mesh[ j ].direction * meshFlowCorrection;
             }
         }
     }
@@ -422,7 +424,7 @@ bool XMVentSolveHC::solve( float meshCorrectionTolerance, int iterationMax, floa
     int i;
     for( i = 0; (i < iterationMax) && (meshCorrection > meshCorrectionTolerance) ; i++ ) {
         meshCorrection = ventSolveHCIterate( m_flowList, m_ventNet->m_branch, m_meshList,
-                                             m_meshCoeff, m_ventNet->m_fanList, nMeshBalanced, lambda );
+                                             m_ventNet->m_fanList, nMeshBalanced, lambda );
 
         //qDebug() << "Iteration" << i << "meshCorrection:" << meshCorrection;
     }
@@ -491,7 +493,6 @@ void XMVentSolveHC::initialize()
 {
     // reset all structures
     m_meshList.empty();
-    m_meshCoeff.empty();
     m_flowList.empty();
 
     // add surface junctions, just like the function name suggests
@@ -500,8 +501,6 @@ void XMVentSolveHC::initialize()
 
     // find mesh and mesh direction coefficients
     createMesh();
-    qDebug() << "Meshes: " << m_meshList;
-    qDebug() << "MeshCoeff: " << m_meshCoeff;
 
     // initialize flow
     flowInitialize();
@@ -528,10 +527,9 @@ QList<float> XMVentSolveHC::fixedFlowPressure() const
     int nMeshBalance = m_meshList.count() - m_ventNet->m_fixedFlow.count();
     QMap<int, float>::const_iterator itFixedFlow = m_ventNet->m_fixedFlow.begin();
     for( int i = nMeshBalance; i < m_meshList.count(); i++, itFixedFlow++ ) { // for each fixed-flow branch
-        QList<int> mesh = m_meshList[i];
-        QList<float> coeff = m_meshCoeff[i];
+        QList<XMVentSolveHCStep> mesh = m_meshList[i];
         // calculate correction
-        MeshAdjust adj = pressureAdjustBranch( m_flowList, mesh, coeff, m_ventNet->m_branch, m_ventNet->m_fanList );
+        MeshAdjust adj = pressureAdjustBranch( m_flowList, mesh, m_ventNet->m_branch, m_ventNet->m_fanList );
 
         if( adj.pressure < 0 ) {
             // calculate regulator resistance
