@@ -20,7 +20,7 @@
 #  <http://www.gnu.org/licenses/>.
 #
 
-QT       += core gui opengl
+QT       += core gui opengl qml
 
 TARGET = xmVent
 TEMPLATE = app
@@ -30,7 +30,7 @@ TRANSLATIONS = translation/xmVent.fr.ts
 ICON = xmVent.icns
 
 # platform specific: Linux, MacOSX, MingW
-LIBS += -L../build-debug-xmVent-lib -lxmVent
+LIBS += -L../xmVent-lib -lxmVent
 
 INCLUDEPATH += ..   # provides access to "xmVent-lib/..."
 

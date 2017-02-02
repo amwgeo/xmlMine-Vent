@@ -29,6 +29,7 @@
 #include <QObject>
 #include <QMultiMap>
 #include <QVector>
+#include <QVariantList>
 
 
 /// Defines a single step while walking through the network
@@ -43,7 +44,7 @@ struct XMVentSolveHCStep {
 class XMVENTSHARED_EXPORT XMVentSolveHC : public QObject
 {
     Q_OBJECT
-    Q_PROPERTY( QList<float> flow READ getFlow WRITE setFlow )
+    Q_PROPERTY( QVariantList flow READ getFlow WRITE setFlow )
 
 protected:
     class XMVentNetwork *m_ventNet;
@@ -62,10 +63,10 @@ public:
                             int iterationMax = 1000000,
                             float lambda = 1.5f );
 
-    QList<float> getFlow() const;
-    void setFlow( const QList<float>& flow );
+    QVariantList getFlow() const;
+    void setFlow( const QVariantList& flow );
 
-    Q_INVOKABLE QList<float> fixedFlowPressure() const;
+    Q_INVOKABLE QVariantList fixedFlowPressure() const;
 };
 
 

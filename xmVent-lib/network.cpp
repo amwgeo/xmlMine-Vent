@@ -25,8 +25,8 @@
 
 #include <QtXml>
 #include <QMap>
-//#include <QGLWidget>
-#include <QtScript>
+#include <QQmlEngine>
+
 
 #include "junction.h"
 #include "branch.h"
@@ -156,28 +156,38 @@ public:
 
     bool executeScript()
     {
-        QScriptEngine engine;
-        XMVentFan::scriptRegisterType( &engine );
-        qScriptRegisterSequenceMetaType<QList<float> >( &engine );
+        QJSEngine myEngine;
+        static bool oneTime = true;
 
-        engine.importExtension( "qt.core" );        // TODO:AW: check for success
+        if( oneTime ) {
+            qmlRegisterType<XMVentFan>("com.mycompany.xmlmine", 1, 0, "XMVentFan");
+            qmlRegisterType<QFile>("io.qt.core", 1, 0, "QFile");
+            oneTime = false;
+        }
 
-        QScriptValue objectNet = engine.newQObject( &m_ventNet );
-        engine.globalObject().setProperty( "net", objectNet );
+        // TODO: import extensions in lieu of "qt.core"
+        myEngine.installExtensions( QJSEngine::AllExtensions );
 
-        QScriptValue objectSolver = engine.newQObject( &m_ventNet.m_solver );
-        engine.globalObject().setProperty( "solver", objectSolver );
+        QJSValue objectNet = myEngine.newQObject( &m_ventNet );
+        myEngine.globalObject().setProperty( "net", objectNet );
 
-        engine.evaluate( scriptCode );
+        // QJSValue QJSEngine::newQObject(QObject *object)
+        QJSValue objectSolver = myEngine.newQObject( &m_ventNet.m_solver );
+        myEngine.globalObject().setProperty( "solver", objectSolver );
 
-        if( engine.hasUncaughtException() ) {
-            QScriptValue e = engine.uncaughtException();
-            qDebug() << "ECMA Unhandled Exception:" << e.toString();
+        QJSValue r = myEngine.evaluate( scriptCode );
+
+        if( r.isError() ) {
+            qDebug() << "ECMA Unhandled Exception:"
+                << r.property("lineNumber").toInt()
+                << ":" << r.toString();
             return false;
         } else {
             qDebug() << "ECMA executed without error";
         }
+
         return true;
+
     }
 
     bool startScript( const QXmlAttributes& atts )
@@ -343,4 +353,7 @@ int XMVentNetwork::findBranchIndex( const QString& id ) const
     }
     return -1;
 }
+
+
+
 

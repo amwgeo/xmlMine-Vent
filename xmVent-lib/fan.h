@@ -27,8 +27,6 @@
 #include "xmvent-global.h"
 
 #include <QObject>
-#include <QtScript/QScriptEngine>
-#include <QtScript/QScriptValue>
 
 class XMVENTSHARED_EXPORT XMVentFan : public QObject
 {
@@ -48,11 +46,6 @@ public:
 
     float fixedPressure() const;
     void setFixedPressure( float fixedPressure );
-
-    static void scriptRegisterType( QScriptEngine *engine );
-    static QScriptValue toScriptValue( QScriptEngine *engine, XMVentFan* const &in );
-    static void fromScriptValue( const QScriptValue &object, XMVentFan* &out );
-
 
 signals:
 

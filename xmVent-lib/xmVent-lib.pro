@@ -20,7 +20,8 @@
 #  <http://www.gnu.org/licenses/>.
 #
 
-QT += gui xml script
+QT += gui xml
+QT += qml
 
 TARGET = xmvent
 TEMPLATE = lib

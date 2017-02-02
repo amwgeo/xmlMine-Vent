@@ -30,7 +30,7 @@
 
 #include <QDebug>
 #include <QtAlgorithms>
-#include <QScriptEngine>
+//#include <QScriptEngine>
 
 #include <cmath>
 #include <climits>
@@ -508,21 +508,29 @@ void XMVentSolveHC::initialize()
 }
 
 
-QList<float> XMVentSolveHC::getFlow() const
+QVariantList XMVentSolveHC::getFlow() const
 {
-    return m_flowList;
+    QVariantList r;
+    for( int i = m_flowList.size(); i>0; i-- ) {
+        r.append( m_flowList[i] );
+    }
+    return r;
 }
 
 
-void XMVentSolveHC::setFlow( const QList<float>& flow )
+void XMVentSolveHC::setFlow( const QVariantList& flow )
 {
-    m_flowList = flow;
+    QList<float> r;
+    for( int i = flow.size(); i>0; i-- ) {
+        r.append( flow[i].toFloat() );
+    }
+    m_flowList = r;
 }
 
 /// returns a list of booster fsp [Pa] (positive); or resistance [Ns2/m8] (negative)
-QList<float> XMVentSolveHC::fixedFlowPressure() const
+QVariantList XMVentSolveHC::fixedFlowPressure() const
 {
-    QList<float> fixedFlowPressure;
+    QVariantList fixedFlowPressure;
 
     int nMeshBalance = m_meshList.count() - m_ventNet->m_fixedFlow.count();
     QMap<int, float>::const_iterator itFixedFlow = m_ventNet->m_fixedFlow.begin();

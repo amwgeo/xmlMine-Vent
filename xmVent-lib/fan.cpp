@@ -23,8 +23,6 @@
 
 #include "fan.h"
 
-//#include <cmath>
-//using namespace std;
 
 XMVentFan::XMVentFan(QObject *parent) :
     QObject(parent)
@@ -54,23 +52,5 @@ float XMVentFan::fixedPressure() const
 void XMVentFan::setFixedPressure( float fixedPressure )
 {
     m_fixedPressure = fixedPressure;
-}
-
-
-void XMVentFan::scriptRegisterType( QScriptEngine *engine )
-{
-    qScriptRegisterMetaType( engine, XMVentFan::toScriptValue, XMVentFan::fromScriptValue );
-}
-
-
-QScriptValue XMVentFan::toScriptValue( QScriptEngine *engine, XMVentFan* const &in )
-{
-    return engine->newQObject(in);
-}
-
-
-void XMVentFan::fromScriptValue( const QScriptValue &object, XMVentFan* &out )
-{
-    out = qobject_cast<XMVentFan*>( object.toQObject() );
 }
 

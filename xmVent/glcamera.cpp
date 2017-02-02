@@ -24,6 +24,7 @@
 #include "glcamera.h"
 
 #include <qgl.h>
+#include <glu.h>
 
 #include <cmath>
 using namespace std;
