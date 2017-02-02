@@ -20,7 +20,7 @@
 #  <http://www.gnu.org/licenses/>.
 #
 
-QT       += core gui opengl qml
+QT       += core gui widgets qml
 
 TARGET = xmVent
 TEMPLATE = app

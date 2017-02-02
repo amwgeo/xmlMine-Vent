@@ -36,11 +36,11 @@
 
 
 XMGLView3D::XMGLView3D( QWidget *parent ):
-        QGLWidget( parent )
+        QOpenGLWidget( parent )
 {
     // TODO: memory leak or delete from parent?
     m_camera = new XMGLCamera( this );
-    connect( m_camera, SIGNAL(changed()), this, SLOT(updateGL()) );
+    connect( m_camera, SIGNAL(changed()), this, SLOT(update()) );
 
     m_ventNet = new XMVentNetwork( this );
 //    XMVentNetwork::fromXml( "data/assignment2.xml", *mVentNet );
@@ -65,7 +65,7 @@ bool XMGLView3D::event(QEvent *event)
     }
 
     // Handle the un-handled with base class implemtation
-    return QGLWidget::event(event);
+    return QOpenGLWidget::event(event);
 }
 
 
@@ -102,7 +102,7 @@ void XMGLView3D::keyPressEvent( class QKeyEvent *event )
         break;
 
     default:
-        QGLWidget::keyPressEvent( event );
+        QOpenGLWidget::keyPressEvent( event );
         break;
     }
 }
@@ -232,7 +232,7 @@ void glVertex( const XMVentJunction* junction )
 }
 
 
-void glDrawNetworkModel( const XMVentNetwork* net, QGLWidget* /*widget*/ )
+void glDrawNetworkModel( const XMVentNetwork* net, QOpenGLWidget* /*widget*/ )
 {
 
     // Draw Nodes
@@ -286,6 +286,8 @@ void glDrawNetworkModel( const XMVentNetwork* net, QGLWidget* /*widget*/ )
 /// draw the scene
 void XMGLView3D::paintGL()
 {
+    //TODO?: beginNativePainting();
+
     // Setup projection matrix
     glMatrixMode( GL_PROJECTION );
     m_camera->glViewMatrix( width(), height() );
@@ -298,6 +300,8 @@ void XMGLView3D::paintGL()
 //    glDrawOrigin();
 //    glDrawModel();
     glDrawNetworkModel( m_ventNet, this );
+
+    //TODO?: endNativePainting();
 }
 
 
@@ -335,7 +339,7 @@ void XMGLView3D::open()
         qDebug() << m_ventNet->m_junction[ branch->fromId() ]->id() << "," << m_ventNet->m_junction[ branch->toId() ]->id() << "," << m_ventNet->m_solver.m_flowList[i];
     }
 
-    updateGL();
+    update();
 }
 
 void XMGLView3D::setVerticalAngle( int value )

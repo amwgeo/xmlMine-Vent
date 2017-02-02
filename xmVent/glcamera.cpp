@@ -23,7 +23,7 @@
 
 #include "glcamera.h"
 
-#include <qgl.h>
+#include <gl.h>
 #include <glu.h>
 
 #include <cmath>

@@ -24,9 +24,9 @@
 #ifndef XMVENTGLVIEW3D_H
 #define XMVENTGLVIEW3D_H
 
-#include <QGLWidget>
+#include <QOpenGLWidget>
 
-class XMGLView3D : public QGLWidget
+class XMGLView3D : public QOpenGLWidget
 {
     Q_OBJECT        // must include this if you use Qt signals/slots
 
