@@ -85,7 +85,7 @@ void XMGLView3D::pinchTriggered(QPinchGesture *gesture)
     }
 
     if( gesture->changeFlags() & QPinchGesture::ScaleFactorChanged ) {
-       m_camera->zoom( gesture->lastScaleFactor() / gesture->scaleFactor() );
+       m_camera->zoom( 1. / gesture->scaleFactor() );
     }
 }
 
