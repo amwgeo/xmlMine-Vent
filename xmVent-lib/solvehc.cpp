@@ -510,8 +510,9 @@ void XMVentSolveHC::initialize()
 
 QVariantList XMVentSolveHC::getFlow() const
 {
+    QList<float>::reverse_iterator it;
     QVariantList r;
-    for( int i = m_flowList.size(); i>0; i-- ) {
+    for( int i = m_flowList.size()-1; i>=0; i-- ) {
         r.append( m_flowList[i] );
     }
     return r;
@@ -521,7 +522,7 @@ QVariantList XMVentSolveHC::getFlow() const
 void XMVentSolveHC::setFlow( const QVariantList& flow )
 {
     QList<float> r;
-    for( int i = flow.size(); i>0; i-- ) {
+    for( int i = flow.size()-1; i>=0; i-- ) {
         r.append( flow[i].toFloat() );
     }
     m_flowList = r;
