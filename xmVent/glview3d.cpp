@@ -113,248 +113,88 @@ void XMGLView3D::initializeGL()
 {
     initializeOpenGLFunctions();
 
-    // Old OpenGL Style
-    /*glShadeModel( GL_SMOOTH );
     glClearColor( 1., 1., 1., 1. );
-    glClearDepth( 1. );
-    glEnable( GL_DEPTH_TEST );
-    glDepthFunc( GL_LEQUAL );
-
-    // Nice perspective calculations
-    glHint( GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST );//*/
-
 
     // Setup OpenGL ES Shader Program
-    if( !mGLShaderProgram.addShaderFromSourceFile(QOpenGLShader::Vertex, ":/shaders/basic.vert") ) {
-        qFatal("Error compiling vertex shader:\n%s", mGLShaderProgram.log().toStdString().c_str());
+    if( !mShaderProgram.addShaderFromSourceFile(QOpenGLShader::Vertex, ":/shaders/basic.vert") ) {
+        qFatal("Error compiling vertex shader:\n%s", mShaderProgram.log().toStdString().c_str());
     }
-    if( !mGLShaderProgram.addShaderFromSourceFile(QOpenGLShader::Fragment, ":/shaders/basic.frag") ) {
-        qFatal("Error compiling fragment shader:\n%s:", mGLShaderProgram.log().toStdString().c_str());
+    if( !mShaderProgram.addShaderFromSourceFile(QOpenGLShader::Fragment, ":/shaders/basic.frag") ) {
+        qFatal("Error compiling fragment shader:\n%s:", mShaderProgram.log().toStdString().c_str());
     }
-    if( !mGLShaderProgram.link() ) {
-        qFatal("Error linking shaders:\n%s", mGLShaderProgram.log().toStdString().c_str());
+    if( !mShaderProgram.link() ) {
+        qFatal("Error linking shaders:\n%s", mShaderProgram.log().toStdString().c_str());
     }
-    if( !mGLShaderProgram.bind() ) {
+    if( !mShaderProgram.bind() ) {
         qFatal("Error binding shader.");
     }
 
-    // Resolve attributes and uniform variables from shaders
-    if( -1 == (vertexLocation = mGLShaderProgram.attributeLocation("vertex")) ) {
-        qFatal("'vertex' not valid attribute in shader");
-    }
-    if( -1 == (matrixLocation = mGLShaderProgram.uniformLocation("matrix")) ) {
-        qFatal("'matrix' not valid uniform in shader");
-    }
-    if( -1 == (colorLocation = mGLShaderProgram.uniformLocation("color")) ) {
-        qFatal("'color' not valid uniform in shader");
-    }
 }
 
 
 /// setup viewport, projection etc.
 void XMGLView3D::resizeGL(int width, int height)
 {
+    // TODO: Is this or otherwise needed in GLES?
     glViewport( 0, 0, width, height );
 }
 
 
-// Draw axis actor
-/*void glDrawOrigin()
+void XMGLView3D::glDrawNetworkModel()
 {
-    glBegin( GL_LINES );
-        glColor3f( 1., 0., 0. );
-        glVertex3f( 0., 0., 0. );
-        glVertex3f( 2., 0., 0. );
+    if(m_ventNet == 0 || m_ventNet->m_junction.size() == 0) return;
 
-        glColor3f( 0., 1., 0. );
-        glVertex3f( 0., 0., 0. );
-        glVertex3f( 0., 2., 0. );
+    mShaderProgram.enableAttributeArray("vertex");
 
-        glColor3f( 0., 0., 1. );
-        glVertex3f( 0., 0., 0. );
-        glVertex3f( 0., 0., 2. );
-    glEnd();
-}//*/
+    //TODO: figure out direct access to data stored in existing junction vector ...
+    //int stride = 0;
+    //if( m_ventNet->m_junction.size() > 1 ) {
+    //    //stride = &(m_ventNet->m_junction[1]->m_point) - &(m_ventNet->m_junction[0]->m_point);
+    //    stride = sizeof(XMVentJunction);
+    //}
+    //QVector3D *data2 = &(m_ventNet->m_junction[0]->m_point);
+    //QVector3D *data = (QVector3D*)(m_ventNet->m_junction.data() + offsetof(class XMVentJunction, m_point));
+    //mShaderProgram.setAttributeArray("vertex", data, stride);
 
+    // copy out vertex data into convienient for purpose vector ...
+    QVector<QVector3D> vertexData;
+    for(int i=0; i< m_ventNet->m_junction.size(); i++ ) {
+        vertexData.append(m_ventNet->m_junction[i]->point());
+    }
+    mShaderProgram.setAttributeArray("vertex", vertexData.constData());
 
-/*void glDrawModel()
-{
-    // Draw model lines
-    glColor3f( 1.0f, 1.0f, 1.0f );
-    glBegin( GL_LINES );
-        glVertex3f( 0.0f, 0.0f, 1.0f );
-        glVertex3f(-1.0f, 1.0f, 0.0f );
+    // copy out element data from branches
+    QVector<GLuint> elements;
+    for(int j=0; j<m_ventNet->m_branch.size(); j++) {
+        elements.append(m_ventNet->m_branch[j]->fromId());
+        elements.append(m_ventNet->m_branch[j]->toId());
+    }
 
-        glVertex3f( 0.0f, 0.0f, 1.0f );
-        glVertex3f( 1.0f, 1.0f, 0.0f );
+    // draw green lines
+    mShaderProgram.setUniformValue("color", QColor(0,255,0,255));
+    glDrawElements(GL_LINES, elements.size(), GL_UNSIGNED_INT, elements.constData());
 
-        glVertex3f( 0.0f, 0.0f, 1.0f );
-        glVertex3f( 1.0f,-1.0f, 0.0f );
+    // draw blue dots
+    mShaderProgram.setUniformValue("color", QColor(0,0,255,255));
+    glPointSize( 5.f );
+    glDrawArrays( GL_POINTS, 0, m_ventNet->m_junction.size() );
 
-        glVertex3f( 0.0f, 0.0f, 1.0f );
-        glVertex3f(-1.0f,-1.0f, 0.0f );
+    // cleanup and make safe until next time
+    mShaderProgram.disableAttributeArray("vertex");
 
-        glVertex3f(-1.0f, 1.0f, 0.0f );
-        glVertex3f( 1.0f, 1.0f, 0.0f );
-
-        glVertex3f( 1.0f, 1.0f, 0.0f );
-        glVertex3f( 1.0f,-1.0f, 0.0f );
-
-        glVertex3f( 1.0f,-1.0f, 0.0f );
-        glVertex3f(-1.0f,-1.0f, 0.0f );
-
-        glVertex3f(-1.0f,-1.0f, 0.0f );
-        glVertex3f(-1.0f, 1.0f, 0.0f );
-    glEnd();
-
-    glPushAttrib( GL_ALL_ATTRIB_BITS );
-    glEnable( GL_POLYGON_OFFSET_FILL );
-    glPolygonOffset( 1., 1. );
-
-    // Draw model solids
-    glColor3f( 0.5f, 0.5f, 1.0f );
-    glBegin( GL_QUADS );
-        glVertex3f(-1.0f, 1.0f, 0.0f );
-        glVertex3f( 1.0f, 1.0f, 0.0f );
-        glVertex3f( 1.0f,-1.0f, 0.0f );
-        glVertex3f(-1.0f,-1.0f, 0.0f );
-    glEnd();
-
-    glBegin( GL_TRIANGLES );
-        glColor3f( 1.0f, 1.0f, 1.0f );
-        glVertex3f( 0.0f, 0.0f, 1.0f );
-        glColor3f( 1.0f, 0.0f, 0.0f );
-        glVertex3f(-1.0f, 1.0f, 0.0f );
-        glColor3f( 0.0f, 1.0f, 0.0f );
-        glVertex3f( 1.0f, 1.0f, 0.0f );
-
-        glColor3f( 1.0f, 1.0f, 1.0f );
-        glVertex3f( 0.0f, 0.0f, 1.0f );
-        glColor3f( 0.0f, 1.0f, 0.0f );
-        glVertex3f( 1.0f, 1.0f, 0.0f );
-        glColor3f( 0.0f, 0.0f, 1.0f );
-        glVertex3f( 1.0f,-1.0f, 0.0f );
-
-        glColor3f( 1.0f, 1.0f, 1.0f );
-        glVertex3f( 0.0f, 0.0f, 1.0f );
-        glColor3f( 0.0f, 0.0f, 1.0f );
-        glVertex3f( 1.0f,-1.0f, 0.0f );
-        glColor3f( 0.0f, 1.0f, 1.0f );
-        glVertex3f(-1.0f,-1.0f, 0.0f );
-
-        glColor3f( 1.0f, 1.0f, 1.0f );
-        glVertex3f( 0.0f, 0.0f, 1.0f );
-        glColor3f( 0.0f, 1.0f, 1.0f );
-        glVertex3f(-1.0f,-1.0f, 0.0f );
-        glColor3f( 1.0f, 0.0f, 0.0f );
-        glVertex3f(-1.0f, 1.0f, 0.0f );
-    glEnd();
-
-    glPopAttrib();
-}//*/
-
-
-// Test Graphics
-void XMGLView3D::glDrawTest()
-{
-    static GLfloat const triangleVertices[] = {
-        60.0f,  10.0f,  0.0f,
-        110.0f, 110.0f, 0.0f,
-        10.0f,  110.0f, 0.0f
-    };
-
-    QColor color(0, 255, 0, 255);
-
-    QMatrix4x4 pmvMatrix;
-    pmvMatrix.ortho(rect());
-
-    mGLShaderProgram.enableAttributeArray(vertexLocation);
-    mGLShaderProgram.setAttributeArray(vertexLocation, triangleVertices, 3);
-    mGLShaderProgram.setUniformValue(matrixLocation, pmvMatrix);
-    mGLShaderProgram.setUniformValue(colorLocation, color);
-
-    glDrawArrays(GL_TRIANGLES, 0, 3);
-
-    mGLShaderProgram.disableAttributeArray(vertexLocation);
 }
 
-/*void glVertex( const XMVentJunction* junction )
-{
-    const QVector3D& point( junction->point() );
-    glVertex3f( point.x(), point.y(), point.z() );
-}//*/
-
-
-/*void glDrawNetworkModel( const XMVentNetwork* net, QOpenGLWidget*  )
-{
-    // Draw Nodes (Old OpenGL
-    glPointSize( 5. );
-    QVector<XMVentJunction*>::const_iterator itJunct;
-    glColor3f( 0., 0., 1. );
-    glBegin( GL_POINTS );
-    for( itJunct = net->m_junction.begin(); itJunct != net->m_junction.end(); itJunct++ ) {
-        glVertex( *itJunct );
-    }
-    glEnd();
-
-    // Draw Branches (Old OpenGL)
-    glColor3f( 0., 1., 0. );
-    glLineStipple( 5, 0xAAAA );
-    QVector<XMVentBranch*>::const_iterator itBranch;
-    for( itBranch = net->m_branch.begin(); itBranch != net->m_branch.end(); itBranch++ ) {
-        XMVentJunction* from = net->m_junction[ (*itBranch)->fromId() ];
-        XMVentJunction* to = net->m_junction[ (*itBranch)->toId() ];
-        bool surface = from->isSurface() && to->isSurface();
-        if( surface ) {
-            glEnable( GL_LINE_STIPPLE );
-        }
-        glBegin( GL_LINES );
-            glVertex( from );
-            glVertex( to );
-        glEnd();
-        if(surface) {
-            glDisable( GL_LINE_STIPPLE );
-        }
-    }
-
-//    glDisable( GL_DEPTH_TEST );
-//    // Draw Node Lables
-//    glColor3f( 0., 0., 1. );
-//    for( itJunct = net->junction.begin(); itJunct != net->junction.end(); itJunct++ ) {
-//        XMVentJunction *j1 = *itJunct;
-//        widget->renderText( j1->point.x(), j1->point.y(), j1->point.z(), j1->id );
-//    }
-//    // Draw Branch Lables
-//    glColor3f( 0., 1., 0. );
-//    for( itBranch = net->branch.begin(); itBranch != net->branch.end(); itBranch++ ) {
-//        QVector3D point = ( net->junction[ (*itBranch)->from ]->point
-//                          + net->junction[ (*itBranch)->to ]->point ) / 2.;
-//        widget->renderText( point.x(), point.y(), point.z(), (*itBranch)->id );
-//    }
-    glEnable( GL_DEPTH_TEST );
-}//*/
 
 /// draw the scene
 void XMGLView3D::paintGL()
 {
-    //TODO?: beginNativePainting();
-
-    // Setup projection matrix
-    /*glMatrixMode( GL_PROJECTION );
-    m_camera->glViewMatrix( width(), height() );
-
-    // Clear the screen reset for next drawing
-    glMatrixMode( GL_MODELVIEW );
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-    glLoadIdentity();
 
-//    glDrawOrigin();
-//    glDrawModel();
-    glDrawNetworkModel( m_ventNet, this );//*/
+    m_MVP = m_camera->glViewMatrix( width(), height() );
 
-    //TODO?: endNativePainting();
+    mShaderProgram.setUniformValue("matrix", m_MVP);
 
-    glDrawTest();
+    glDrawNetworkModel();
 }
 
 

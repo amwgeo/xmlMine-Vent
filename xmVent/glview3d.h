@@ -27,6 +27,7 @@
 #include <QOpenGLWidget>
 #include <QOpenGLShaderProgram>
 #include <QOpenGLFunctions>
+#include <QMatrix4x4>
 
 
 class XMGLView3D : public QOpenGLWidget, protected QOpenGLFunctions
@@ -38,6 +39,9 @@ public:
 
     class XMVentNetwork* m_ventNet;
     class XMGLCamera* m_camera;
+    class QMatrix4x4 m_MVP;
+
+    void glDrawNetworkModel();
 
 protected:
     bool event(QEvent *event);
@@ -51,12 +55,7 @@ protected:
     void paintGL();
 
     // OpenGL ES Shader
-    QOpenGLShaderProgram mGLShaderProgram;
-    int vertexLocation;
-    int matrixLocation;
-    int colorLocation;
-    void glDrawTest();
-
+    QOpenGLShaderProgram mShaderProgram;
 
 signals:
     void changed();
