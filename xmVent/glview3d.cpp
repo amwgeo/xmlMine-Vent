@@ -119,6 +119,17 @@ void XMGLView3D::initializeGL()
 
     // Nice perspective calculations
     glHint( GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST );
+
+
+    // Setup OpenGL ES Shader Program
+    /*mGLShaderProgram.addShaderFromSourceFile(QOpenGLShader::Vertex, ":/shaders/basic.vert");
+    mGLShaderProgram.addShaderFromSourceFile(QOpenGLShader::Fragment, ":/shaders/basic.frag");
+    mGLShaderProgram.link();
+    mGLShaderProgram.bind();
+
+    vertexLocation = mGLShaderProgram.attributeLocation("vertex");
+    matrixLocation = mGLShaderProgram.uniformLocation("matrix");
+    colorLocation = mGLShaderProgram.uniformLocation("color");//*/
 }
 
 
@@ -130,7 +141,7 @@ void XMGLView3D::resizeGL(int width, int height)
 
 
 // Draw axis actor
-void glDrawOrigin()
+/*void glDrawOrigin()
 {
     glBegin( GL_LINES );
         glColor3f( 1., 0., 0. );
@@ -145,10 +156,10 @@ void glDrawOrigin()
         glVertex3f( 0., 0., 0. );
         glVertex3f( 0., 0., 2. );
     glEnd();
-}
+}//*/
 
 
-void glDrawModel()
+/*void glDrawModel()
 {
     // Draw model lines
     glColor3f( 1.0f, 1.0f, 1.0f );
@@ -222,7 +233,7 @@ void glDrawModel()
     glEnd();
 
     glPopAttrib();
-}
+}//*/
 
 
 void glVertex( const XMVentJunction* junction )
@@ -237,7 +248,7 @@ void glDrawNetworkModel( const XMVentNetwork* net, QOpenGLWidget* /*widget*/ )
 
     // Draw Nodes
     glPointSize( 5. );
-    QList<XMVentJunction*>::const_iterator itJunct;
+    QVector<XMVentJunction*>::const_iterator itJunct;
     glColor3f( 0., 0., 1. );
     glBegin( GL_POINTS );
     for( itJunct = net->m_junction.begin(); itJunct != net->m_junction.end(); itJunct++ ) {
@@ -248,7 +259,7 @@ void glDrawNetworkModel( const XMVentNetwork* net, QOpenGLWidget* /*widget*/ )
     // Draw Branches
     glColor3f( 0., 1., 0. );
     glLineStipple( 5, 0xAAAA );
-    QList<XMVentBranch*>::const_iterator itBranch;
+    QVector<XMVentBranch*>::const_iterator itBranch;
     for( itBranch = net->m_branch.begin(); itBranch != net->m_branch.end(); itBranch++ ) {
         XMVentJunction* from = net->m_junction[ (*itBranch)->fromId() ];
         XMVentJunction* to = net->m_junction[ (*itBranch)->toId() ];

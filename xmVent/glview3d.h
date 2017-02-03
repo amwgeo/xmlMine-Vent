@@ -25,6 +25,8 @@
 #define XMVENTGLVIEW3D_H
 
 #include <QOpenGLWidget>
+#include <QOpenGLShaderProgram>
+
 
 class XMGLView3D : public QOpenGLWidget
 {
@@ -42,9 +44,16 @@ protected:
     void pinchTriggered( class QPinchGesture *gesture );
     void keyPressEvent( class QKeyEvent *event );
 
+    // OpenGL Widget
     void initializeGL();
     void resizeGL( int width, int height );
     void paintGL();
+
+    // OpenGL ES Shader
+    QOpenGLShaderProgram mGLShaderProgram;
+    int vertexLocation;
+    int matrixLocation;
+    int colorLocation;
 
 signals:
     void changed();

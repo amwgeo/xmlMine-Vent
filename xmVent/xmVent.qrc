@@ -3,5 +3,7 @@
         <file>images/open.png</file>
         <file>images/xmVent.png</file>
         <file>translation/xmVent.fr.qm</file>
+        <file>shaders/basic.frag</file>
+        <file>shaders/basic.vert</file>
     </qresource>
 </RCC>

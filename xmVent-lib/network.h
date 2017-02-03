@@ -35,8 +35,9 @@ class XMVENTSHARED_EXPORT XMVentNetwork : public QObject
     Q_OBJECT
 
 public:
-    QList<class XMVentJunction*> m_junction;
-    QList<class XMVentBranch*> m_branch;
+    // QVector is stored in adjacent memory and compatible with GL VBO
+    QVector<class XMVentJunction*> m_junction;
+    QVector<class XMVentBranch*> m_branch;
     QList<class XMVentFan*> m_fanDefinition;
     QMap<int,float> m_fixedFlow;  // (branchId, fixed flow)
     QMap<int,class XMVentFan*> m_fanList;

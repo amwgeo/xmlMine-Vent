@@ -69,7 +69,7 @@ using namespace std;
 
 
 /// walk through all dependent branches and sum resistance
-float branchDependentWalk( int branchId,  const QList<XMVentBranch*>& branches,
+float branchDependentWalk( int branchId,  const QVector<XMVentBranch*>& branches,
                            const QMultiHash<int,XMVentSolveHCStep>& adj, QList<int>& branchAvoid )
 {
     const XMVentBranch* branch = branches[branchId];
@@ -106,13 +106,13 @@ float branchDependentWalk( int branchId,  const QList<XMVentBranch*>& branches,
 
 
 /// create a list of high-resistance independent seed branches
-QList<int> branchPriority( const QList<XMVentBranch*>& branches,
+QList<int> branchPriority( const QVector<XMVentBranch*>& branches,
                     const QMultiHash<int,XMVentSolveHCStep>& adj,
                     QList<int> branchAvoid = QList<int>() )
 {
     // Insert sort into map (resistance, branchId)
     QMultiMap<double, int> map;
-    QList<class XMVentBranch*>::const_iterator it;
+    QVector<class XMVentBranch*>::const_iterator it;
     int branchId = 0;
     for( it = branches.begin(); it != branches.end(); it++, branchId++ ) {
         if( !branchAvoid.contains( branchId ) ) {
@@ -133,7 +133,7 @@ QList<int> branchPriority( const QList<XMVentBranch*>& branches,
 void addSurfaceJunctions( XMVentNetwork* net )
 {
     bool first = true;
-    QList<class XMVentJunction*>::const_iterator it;
+    QVector<class XMVentJunction*>::const_iterator it;
     int junctionId = 0;
     int firstSurfaceId;
     for( it = net->m_junction.begin(); it != net->m_junction.end(); it++, junctionId++ ) {
@@ -155,13 +155,13 @@ void addSurfaceJunctions( XMVentNetwork* net )
 
 
 /// create an Adjacency map for nodes including branch numbers
-QMultiHash<int,XMVentSolveHCStep> nodeAdjacency( const QList<class XMVentBranch*>& branches )
+QMultiHash<int,XMVentSolveHCStep> nodeAdjacency( const QVector<class XMVentBranch*>& branches )
 {
     QMultiHash<int,XMVentSolveHCStep> nodeAdjacency;
 
     int branchId;
     XMVentSolveHCStep step;
-    QList<XMVentBranch*>::ConstIterator itBranch;
+    QVector<XMVentBranch*>::ConstIterator itBranch;
     for( itBranch = branches.begin(), branchId = 0; itBranch != branches.end(); itBranch++, branchId++ ) {
 
         XMVentBranch* branch = *itBranch;
@@ -351,7 +351,7 @@ struct MeshAdjust {
 
 /// calculate mesh pressure imbalance and slope (dP/dQ) for correction
 MeshAdjust pressureAdjustBranch( const QList<float>& flow, const QList<XMVentSolveHCStep>& mesh,
-                                 const QList<class XMVentBranch*>& branchList,
+                                 const QVector<class XMVentBranch*>& branchList,
                                  const QMap<int,class XMVentFan*>& fanList )
 {
     MeshAdjust adj;
@@ -381,7 +381,7 @@ MeshAdjust pressureAdjustBranch( const QList<float>& flow, const QList<XMVentSol
 
 /// solve for next Hardy-Cross iteration step
 // TODO:AW: test over relaxation 1 < lambda < 2 to accelerate convergence
-float ventSolveHCIterate( QList<float>& flow, const QList<class XMVentBranch*>& branchList,
+float ventSolveHCIterate( QList<float>& flow, const QVector<class XMVentBranch*>& branchList,
                           const QList<QList<XMVentSolveHCStep> >& meshList, const QMap<int,class XMVentFan*>& fanList,
                           int nMeshBalanced, float lambda )
 {

@@ -268,13 +268,13 @@ XMVentNetwork::XMVentNetwork( QObject *parent ) :
 
 void XMVentNetwork::clear()
 {
-    QList<XMVentJunction*>::iterator itJunct;
+    QVector<XMVentJunction*>::iterator itJunct;
     for( itJunct = m_junction.begin(); itJunct != m_junction.end(); itJunct++ ) {
         delete *itJunct;
     }
     m_junction.clear();
 
-    QList<XMVentBranch*>::iterator itBranch;
+    QVector<XMVentBranch*>::iterator itBranch;
     for( itBranch = m_branch.begin(); itBranch != m_branch.end(); itBranch++ ) {
         delete *itBranch;
     }
@@ -315,7 +315,7 @@ void XMVentNetwork::getLimits( float& x0, float& y0, float& z0, float& x1, float
     y1 = -INFINITY;
     z0 = INFINITY;
     z1 = -INFINITY;
-    QList<XMVentJunction*>::const_iterator itJunct;
+    QVector<XMVentJunction*>::const_iterator itJunct;
     for( itJunct = m_junction.begin(); itJunct != m_junction.end(); itJunct++ ) {
         float x = (*itJunct)->point().x();
         float y = (*itJunct)->point().y();
@@ -344,7 +344,7 @@ XMVentFan* XMVentNetwork::getFanDefinition( const QString& id )
 
 int XMVentNetwork::findBranchIndex( const QString& id ) const
 {
-    QList<class XMVentBranch*>::const_iterator it;
+    QVector<class XMVentBranch*>::const_iterator it;
     int i = 0;
     for( it = m_branch.begin(); it != m_branch.end(); it++, i++ ) {
         if( (*it)->id() == id ) {
