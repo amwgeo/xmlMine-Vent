@@ -26,9 +26,10 @@
 
 #include <QOpenGLWidget>
 #include <QOpenGLShaderProgram>
+#include <QOpenGLFunctions>
 
 
-class XMGLView3D : public QOpenGLWidget
+class XMGLView3D : public QOpenGLWidget, protected QOpenGLFunctions
 {
     Q_OBJECT        // must include this if you use Qt signals/slots
 

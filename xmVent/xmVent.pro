@@ -20,6 +20,8 @@
 #  <http://www.gnu.org/licenses/>.
 #
 
+CONFIG += debug
+
 QT       += core gui widgets qml
 
 TARGET = xmVent

@@ -111,6 +111,8 @@ void XMGLView3D::keyPressEvent( class QKeyEvent *event )
 /// Set up the rendering context, define display lists etc.
 void XMGLView3D::initializeGL()
 {
+    initializeOpenGLFunctions();
+
     // Old OpenGL Style
     /*glShadeModel( GL_SMOOTH );
     glClearColor( 1., 1., 1., 1. );
@@ -276,14 +278,14 @@ void XMGLView3D::glDrawTest()
     mGLShaderProgram.disableAttributeArray(vertexLocation);
 }
 
-void glVertex( const XMVentJunction* junction )
+/*void glVertex( const XMVentJunction* junction )
 {
     const QVector3D& point( junction->point() );
     glVertex3f( point.x(), point.y(), point.z() );
-}
+}//*/
 
 
-void glDrawNetworkModel( const XMVentNetwork* net, QOpenGLWidget* /*widget*/ )
+/*void glDrawNetworkModel( const XMVentNetwork* net, QOpenGLWidget*  )
 {
     // Draw Nodes (Old OpenGL
     glPointSize( 5. );
@@ -293,7 +295,7 @@ void glDrawNetworkModel( const XMVentNetwork* net, QOpenGLWidget* /*widget*/ )
     for( itJunct = net->m_junction.begin(); itJunct != net->m_junction.end(); itJunct++ ) {
         glVertex( *itJunct );
     }
-    glEnd();//*/
+    glEnd();
 
     // Draw Branches (Old OpenGL)
     glColor3f( 0., 1., 0. );
@@ -313,25 +315,24 @@ void glDrawNetworkModel( const XMVentNetwork* net, QOpenGLWidget* /*widget*/ )
         if(surface) {
             glDisable( GL_LINE_STIPPLE );
         }
-    }//*/
-
-    /*glDisable( GL_DEPTH_TEST );
-    // Draw Node Lables
-    glColor3f( 0., 0., 1. );
-    for( itJunct = net->junction.begin(); itJunct != net->junction.end(); itJunct++ ) {
-        XMVentJunction *j1 = *itJunct;
-        widget->renderText( j1->point.x(), j1->point.y(), j1->point.z(), j1->id );
     }
-    // Draw Branch Lables
-    glColor3f( 0., 1., 0. );
-    for( itBranch = net->branch.begin(); itBranch != net->branch.end(); itBranch++ ) {
-        QVector3D point = ( net->junction[ (*itBranch)->from ]->point
-                          + net->junction[ (*itBranch)->to ]->point ) / 2.;
-        widget->renderText( point.x(), point.y(), point.z(), (*itBranch)->id );
-    }
-    glEnable( GL_DEPTH_TEST );//*/
 
-}
+//    glDisable( GL_DEPTH_TEST );
+//    // Draw Node Lables
+//    glColor3f( 0., 0., 1. );
+//    for( itJunct = net->junction.begin(); itJunct != net->junction.end(); itJunct++ ) {
+//        XMVentJunction *j1 = *itJunct;
+//        widget->renderText( j1->point.x(), j1->point.y(), j1->point.z(), j1->id );
+//    }
+//    // Draw Branch Lables
+//    glColor3f( 0., 1., 0. );
+//    for( itBranch = net->branch.begin(); itBranch != net->branch.end(); itBranch++ ) {
+//        QVector3D point = ( net->junction[ (*itBranch)->from ]->point
+//                          + net->junction[ (*itBranch)->to ]->point ) / 2.;
+//        widget->renderText( point.x(), point.y(), point.z(), (*itBranch)->id );
+//    }
+    glEnable( GL_DEPTH_TEST );
+}//*/
 
 /// draw the scene
 void XMGLView3D::paintGL()

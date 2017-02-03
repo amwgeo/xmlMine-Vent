@@ -50,7 +50,8 @@ public:
     float zenith() const;
     float horizontalFOV() const;
 
-    void glViewMatrix( int width, int height ) const;
+    // Old OpenGL
+    //void glViewMatrix( int width, int height ) const;
 
 signals:
     void changed();

@@ -23,9 +23,6 @@
 
 #include "glcamera.h"
 
-#include <gl.h>
-#include <glu.h>
-
 #include <cmath>
 using namespace std;
 
@@ -141,7 +138,8 @@ void XMGLCamera::setHorizontalFOV( float fov )
     m_horizontalFOV = fov;
 }
 
-
+// Old OpenGL
+/*
 void XMGLCamera::glViewMatrix( int width, int height ) const
 {
     glLoadIdentity();
@@ -151,4 +149,5 @@ void XMGLCamera::glViewMatrix( int width, int height ) const
     glRotatef( m_zenith, -1., 0., 0. );          // Rotate Zenuth Angle
     glRotatef( m_azimuth, 0., 0., 1. );          // Rotate for Azimuth
     glTranslatef( -m_x, -m_y, -m_z );            // Translate to centre focal point
-}
+
+}//*/
