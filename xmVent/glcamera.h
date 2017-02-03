@@ -53,7 +53,7 @@ public:
     float zenith() const;
     float horizontalFOV() const;
 
-    QMatrix4x4 glViewMatrix( const QRect );
+    QMatrix4x4 glViewMatrix( int width, int height );
 
 signals:
     void changed();
