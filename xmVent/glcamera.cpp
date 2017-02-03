@@ -139,175 +139,19 @@ void XMGLCamera::setHorizontalFOV( float fov )
 }
 
 
-// ES Util based on https://github.com/danginsburg/opengles3-book
-
-#define PI 3.1415926535897932384626433832795f
-
-void esLoadIdentity( float* mat )
+QMatrix4x4 XMGLCamera::glViewMatrix( const QRect rect )
 {
-    mat[0] = 1.;
-    mat[1] = 0.;
-    mat[2] = 0.;
-    mat[3] = 0.;
+    QMatrix4x4 mat;
+    float aspect = float(rect.width()) / rect.height();
+    mat.perspective( 45., aspect, 0.01*m_distance, 100.*m_distance );
+    mat.translate( 0., 0., -m_distance );           // Stand back distance
+    mat.rotate( m_zenith, -1., 0., 0. );            // Rotate Zenuth Angle
+    mat.rotate( m_azimuth, 0., 0., 1. );            // Rotate for Azimuth
+    mat.translate( -m_x, -m_y, -m_z );              // Translate to centre focal point
 
-    mat[4] = 0.;
-    mat[5] = 1.;
-    mat[6] = 0.;
-    mat[7] = 0.;
-
-    mat[8] = 0.;
-    mat[9] = 0.;
-    mat[10] = 1.;
-    mat[11] = 0.;
-
-    mat[12] = 0.;
-    mat[13] = 0.;
-    mat[14] = 0.;
-    mat[15] = 1.;
+    return mat;
 }
 
-void esMatrixMultiply ( float *result, float *srcA, float *srcB )
-{
-   float temp[16];
-   int i;
-
-   for( i = 0; i < 4; i++ )
-   {
-      temp[4*i+0] =  ( srcA[4*i+0] * srcB[4*0+0] ) +
-                     ( srcA[4*i+1] * srcB[4*1+0] ) +
-                     ( srcA[4*i+2] * srcB[4*2+0] ) +
-                     ( srcA[4*i+3] * srcB[4*3+0] ) ;
-
-      temp[4*i+1] =  ( srcA[4*i+0] * srcB[4*0+1] ) +
-                     ( srcA[4*i+1] * srcB[4*1+1] ) +
-                     ( srcA[4*i+2] * srcB[4*2+1] ) +
-                     ( srcA[4*i+3] * srcB[4*3+1] ) ;
-
-      temp[4*i+2] =  ( srcA[4*i+0] * srcB[4*0+2] ) +
-                     ( srcA[4*i+1] * srcB[4*1+2] ) +
-                     ( srcA[4*i+2] * srcB[4*2+2] ) +
-                     ( srcA[4*i+3] * srcB[4*3+2] ) ;
-
-      temp[4*i+3] =  ( srcA[4*i+0] * srcB[4*0+3] ) +
-                     ( srcA[4*i+1] * srcB[4*1+3] ) +
-                     ( srcA[4*i+2] * srcB[4*2+3] ) +
-                     ( srcA[4*i+3] * srcB[4*3+3] ) ;
-   }
-
-   memcpy ( result, &temp, 16*sizeof(float) );
-}
-
-void esFrustum ( float *mat, float left, float right, float bottom, float top, float nearZ, float farZ )
-{
-    float deltaX = right - left;
-    float deltaY = top - bottom;
-    float deltaZ = farZ - nearZ;
-    float frust[16];
-
-    if( ( nearZ <= 0.0f ) || ( farZ <= 0.0f ) ||
-        ( deltaX <= 0.0f ) || ( deltaY <= 0.0f ) || ( deltaZ <= 0.0f ) )
-    {
-        return;
-    }
-
-    frust[0] = 2.0f * nearZ / deltaX;
-    frust[1] = frust[2] = frust[3] = 0.0f;
-
-    frust[5] = 2.0f * nearZ / deltaY;
-    frust[4] = frust[6] = frust[7] = 0.0f;
-
-    frust[8] = ( right + left ) / deltaX;
-    frust[9] = ( top + bottom ) / deltaY;
-    frust[10] = - ( nearZ + farZ ) / deltaZ;
-    frust[11] = -1.0f;
-
-    frust[14] = -2.0f * nearZ * farZ / deltaZ;
-    frust[12] = frust[13] = frust[15] = 0.0f;
-
-    esMatrixMultiply ( mat, frust, mat );
-}
-
-void esPerspective( float* mat, float fovy, float aspect, float nearZ, float farZ )
-{
-    float frustumW, frustumH;
-
-    frustumH = tanf ( fovy / 360.0f * PI ) * nearZ;
-    frustumW = frustumH * aspect;
-
-    esFrustum( mat, -frustumW, frustumW, -frustumH, frustumH, nearZ, farZ );
-}
-
-void esRotate( float* mat, float angle, float x, float y, float z )
-{
-    float sinAngle, cosAngle;
-    float mag = sqrtf ( x * x + y * y + z * z );
-
-    sinAngle = sinf ( angle * PI / 180.0f );
-    cosAngle = cosf ( angle * PI / 180.0f );
-
-    if ( mag > 0.0f )
-    {
-        float xx, yy, zz, xy, yz, zx, xs, ys, zs;
-        float oneMinusCos;
-        float rotMat[16];
-
-        x /= mag;
-        y /= mag;
-        z /= mag;
-
-        xx = x * x;
-        yy = y * y;
-        zz = z * z;
-        xy = x * y;
-        yz = y * z;
-        zx = z * x;
-        xs = x * sinAngle;
-        ys = y * sinAngle;
-        zs = z * sinAngle;
-        oneMinusCos = 1.0f - cosAngle;
-
-        rotMat[0] = ( oneMinusCos * xx ) + cosAngle;
-        rotMat[1] = ( oneMinusCos * xy ) - zs;
-        rotMat[2] = ( oneMinusCos * zx ) + ys;
-        rotMat[3] = 0.0F;
-
-        rotMat[4] = ( oneMinusCos * xy ) + zs;
-        rotMat[5] = ( oneMinusCos * yy ) + cosAngle;
-        rotMat[6] = ( oneMinusCos * yz ) - xs;
-        rotMat[7] = 0.0F;
-
-        rotMat[8] = ( oneMinusCos * zx ) - ys;
-        rotMat[9] = ( oneMinusCos * yz ) + xs;
-        rotMat[10] = ( oneMinusCos * zz ) + cosAngle;
-        rotMat[11] = 0.0F;
-
-        rotMat[12] = 0.0F;
-        rotMat[13] = 0.0F;
-        rotMat[14] = 0.0F;
-        rotMat[15] = 1.0F;
-
-        esMatrixMultiply ( mat, rotMat, mat );
-    }
-}
-
-void esTranslate( float* mat, float tx, float ty, float tz )
-{
-    mat[12] += mat[0] * tx + mat[4] * ty + mat[8] * tz;
-    mat[13] += mat[1] * tx + mat[5] * ty + mat[9] * tz;
-    mat[14] += mat[2] * tx + mat[6] * ty + mat[10] * tz;
-    mat[15] += mat[3] * tx + mat[7] * ty + mat[11] * tz;
-}
-
-void XMGLCamera::glViewMatrix(float* mat, int width, int height )
-{
-    esLoadIdentity( mat );
-    float aspect = float(width) / height;
-    esPerspective( mat, 45., aspect, 0.01*m_distance, 100.*m_distance );
-    esTranslate( mat, 0., 0., -m_distance );         // Stand back distance
-    esRotate( mat, m_zenith, -1., 0., 0. );          // Rotate Zenuth Angle
-    esRotate( mat, m_azimuth, 0., 0., 1. );          // Rotate for Azimuth
-    esTranslate( mat, -m_x, -m_y, -m_z );            // Translate to centre focal point
-}
 
 
 // Old OpenGL

@@ -25,6 +25,9 @@
 #define XMVENTGLCAMERA_H
 
 #include <QObject>
+#include <QRect>
+#include <QMatrix4x4>
+
 
 class XMGLCamera : public QObject
 {
@@ -50,10 +53,7 @@ public:
     float zenith() const;
     float horizontalFOV() const;
 
-    void glViewMatrix(float* mat, int width, int height );
-
-    // Old OpenGL
-    //void glViewMatrix( int width, int height ) const;
+    QMatrix4x4 glViewMatrix( const QRect );
 
 signals:
     void changed();
