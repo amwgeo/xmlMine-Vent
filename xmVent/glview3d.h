@@ -54,6 +54,8 @@ protected:
     int vertexLocation;
     int matrixLocation;
     int colorLocation;
+    void glDrawTest();
+
 
 signals:
     void changed();

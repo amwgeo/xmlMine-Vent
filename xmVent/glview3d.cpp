@@ -111,25 +111,41 @@ void XMGLView3D::keyPressEvent( class QKeyEvent *event )
 /// Set up the rendering context, define display lists etc.
 void XMGLView3D::initializeGL()
 {
-    glShadeModel( GL_SMOOTH );
+    // Old OpenGL Style
+    /*glShadeModel( GL_SMOOTH );
     glClearColor( 1., 1., 1., 1. );
     glClearDepth( 1. );
     glEnable( GL_DEPTH_TEST );
     glDepthFunc( GL_LEQUAL );
 
     // Nice perspective calculations
-    glHint( GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST );
+    glHint( GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST );//*/
 
 
     // Setup OpenGL ES Shader Program
-    /*mGLShaderProgram.addShaderFromSourceFile(QOpenGLShader::Vertex, ":/shaders/basic.vert");
-    mGLShaderProgram.addShaderFromSourceFile(QOpenGLShader::Fragment, ":/shaders/basic.frag");
-    mGLShaderProgram.link();
-    mGLShaderProgram.bind();
+    if( !mGLShaderProgram.addShaderFromSourceFile(QOpenGLShader::Vertex, ":/shaders/basic.vert") ) {
+        qFatal("Error compiling vertex shader:\n%s", mGLShaderProgram.log().toStdString().c_str());
+    }
+    if( !mGLShaderProgram.addShaderFromSourceFile(QOpenGLShader::Fragment, ":/shaders/basic.frag") ) {
+        qFatal("Error compiling fragment shader:\n%s:", mGLShaderProgram.log().toStdString().c_str());
+    }
+    if( !mGLShaderProgram.link() ) {
+        qFatal("Error linking shaders:\n%s", mGLShaderProgram.log().toStdString().c_str());
+    }
+    if( !mGLShaderProgram.bind() ) {
+        qFatal("Error binding shader.");
+    }
 
-    vertexLocation = mGLShaderProgram.attributeLocation("vertex");
-    matrixLocation = mGLShaderProgram.uniformLocation("matrix");
-    colorLocation = mGLShaderProgram.uniformLocation("color");//*/
+    // Resolve attributes and uniform variables from shaders
+    if( -1 == (vertexLocation = mGLShaderProgram.attributeLocation("vertex")) ) {
+        qFatal("'vertex' not valid attribute in shader");
+    }
+    if( -1 == (matrixLocation = mGLShaderProgram.uniformLocation("matrix")) ) {
+        qFatal("'matrix' not valid uniform in shader");
+    }
+    if( -1 == (colorLocation = mGLShaderProgram.uniformLocation("color")) ) {
+        qFatal("'color' not valid uniform in shader");
+    }
 }
 
 
@@ -236,6 +252,30 @@ void XMGLView3D::resizeGL(int width, int height)
 }//*/
 
 
+// Test Graphics
+void XMGLView3D::glDrawTest()
+{
+    static GLfloat const triangleVertices[] = {
+        60.0f,  10.0f,  0.0f,
+        110.0f, 110.0f, 0.0f,
+        10.0f,  110.0f, 0.0f
+    };
+
+    QColor color(0, 255, 0, 255);
+
+    QMatrix4x4 pmvMatrix;
+    pmvMatrix.ortho(rect());
+
+    mGLShaderProgram.enableAttributeArray(vertexLocation);
+    mGLShaderProgram.setAttributeArray(vertexLocation, triangleVertices, 3);
+    mGLShaderProgram.setUniformValue(matrixLocation, pmvMatrix);
+    mGLShaderProgram.setUniformValue(colorLocation, color);
+
+    glDrawArrays(GL_TRIANGLES, 0, 3);
+
+    mGLShaderProgram.disableAttributeArray(vertexLocation);
+}
+
 void glVertex( const XMVentJunction* junction )
 {
     const QVector3D& point( junction->point() );
@@ -245,8 +285,7 @@ void glVertex( const XMVentJunction* junction )
 
 void glDrawNetworkModel( const XMVentNetwork* net, QOpenGLWidget* /*widget*/ )
 {
-
-    // Draw Nodes
+    // Draw Nodes (Old OpenGL
     glPointSize( 5. );
     QVector<XMVentJunction*>::const_iterator itJunct;
     glColor3f( 0., 0., 1. );
@@ -254,9 +293,9 @@ void glDrawNetworkModel( const XMVentNetwork* net, QOpenGLWidget* /*widget*/ )
     for( itJunct = net->m_junction.begin(); itJunct != net->m_junction.end(); itJunct++ ) {
         glVertex( *itJunct );
     }
-    glEnd();
+    glEnd();//*/
 
-    // Draw Branches
+    // Draw Branches (Old OpenGL)
     glColor3f( 0., 1., 0. );
     glLineStipple( 5, 0xAAAA );
     QVector<XMVentBranch*>::const_iterator itBranch;
@@ -274,7 +313,7 @@ void glDrawNetworkModel( const XMVentNetwork* net, QOpenGLWidget* /*widget*/ )
         if(surface) {
             glDisable( GL_LINE_STIPPLE );
         }
-    }
+    }//*/
 
     /*glDisable( GL_DEPTH_TEST );
     // Draw Node Lables
@@ -300,7 +339,7 @@ void XMGLView3D::paintGL()
     //TODO?: beginNativePainting();
 
     // Setup projection matrix
-    glMatrixMode( GL_PROJECTION );
+    /*glMatrixMode( GL_PROJECTION );
     m_camera->glViewMatrix( width(), height() );
 
     // Clear the screen reset for next drawing
@@ -310,9 +349,11 @@ void XMGLView3D::paintGL()
 
 //    glDrawOrigin();
 //    glDrawModel();
-    glDrawNetworkModel( m_ventNet, this );
+    glDrawNetworkModel( m_ventNet, this );//*/
 
     //TODO?: endNativePainting();
+
+    glDrawTest();
 }
 
 
