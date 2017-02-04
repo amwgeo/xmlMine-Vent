@@ -288,6 +288,8 @@ void XMVentNetwork::clear()
 
     m_fixedFlow.clear();
     m_fanList.clear();
+
+    m_solver.clear();
 }
 
 

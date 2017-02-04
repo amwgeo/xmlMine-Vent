@@ -551,3 +551,9 @@ QVariantList XMVentSolveHC::fixedFlowPressure() const
 
     return fixedFlowPressure;
 }
+
+void XMVentSolveHC::clear()
+{
+    m_meshList.clear();
+    m_flowList.clear();
+}

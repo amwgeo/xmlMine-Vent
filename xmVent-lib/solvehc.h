@@ -66,6 +66,8 @@ public:
     QVariantList getFlow() const;
     void setFlow( const QVariantList& flow );
 
+    Q_INVOKABLE void clear();
+
     Q_INVOKABLE QVariantList fixedFlowPressure() const;
 };
 
