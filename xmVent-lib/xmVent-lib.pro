@@ -22,7 +22,7 @@
 
 QT += gui xml qml
 
-TARGET = xmvent
+TARGET = xmVent
 TEMPLATE = lib
 VERSION = 1.0.0
 DESTDIR = ../build
