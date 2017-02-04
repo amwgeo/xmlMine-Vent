@@ -510,11 +510,15 @@ void XMVentSolveHC::initialize()
 
 QVariantList XMVentSolveHC::getFlow() const
 {
-    QList<float>::reverse_iterator it;
     QVariantList r;
+
+    // Available in Qt5.6
+    // QList<float>::reverse_iterator it;
+
     for( int i = m_flowList.size()-1; i>=0; i-- ) {
         r.append( m_flowList[i] );
     }
+
     return r;
 }
 
