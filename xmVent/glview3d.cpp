@@ -175,7 +175,7 @@ void XMGLView3D::glDrawNetworkModel()
 
     // draw blue dots
     mShaderProgram.setUniformValue("color", QColor(0,0,255,255));
-    glPointSize( 5.f );
+//    glPointSize( 5.f );       // TODO GLES: set gl_PointSize in vertex shader
     glDrawArrays( GL_POINTS, 0, m_ventNet->m_junction.size() );
 
     // cleanup and make safe until next time
