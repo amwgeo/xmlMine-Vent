@@ -120,7 +120,7 @@ bool XMVentJunctionModel::setData( const QModelIndex &index,
     if( index.isValid() && role == Qt::EditRole ) {
         XMVentJunction* junction = m_ventNet.m_junction[ index.row() ];
 
-        bool ok;
+        bool ok = false;
         float newValue;
 
         switch( index.column() ) {
