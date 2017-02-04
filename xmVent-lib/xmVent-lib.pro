@@ -20,13 +20,12 @@
 #  <http://www.gnu.org/licenses/>.
 #
 
-CONFIG += debug
-
 QT += gui xml qml
 
 TARGET = xmvent
 TEMPLATE = lib
 VERSION = 1.0.0
+DESTDIR = ../build
 
 DEFINES += XMVENT_LIBRARY
 

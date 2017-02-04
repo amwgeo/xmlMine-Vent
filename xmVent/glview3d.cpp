@@ -44,7 +44,6 @@ XMGLView3D::XMGLView3D( QWidget *parent ):
 
     m_ventNet = new XMVentNetwork( this );
 //    XMVentNetwork::fromXml( "data/assignment2.xml", *mVentNet );
-//    XMVentNetwork::fromXml( "/Users/awilson/Development/QVent/data/assignment2.xml", *mVentNet );
 
     grabGesture(Qt::PinchGesture);
 
