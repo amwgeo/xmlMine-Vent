@@ -1,5 +1,5 @@
 TEMPLATE      = subdirs
 
-SUBDIRS = xmVent xmVent-lib
+SUBDIRS = xmVent-lib xmVent
 
 CONFIG += debug
