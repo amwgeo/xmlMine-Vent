@@ -180,11 +180,11 @@ void XMGLView3D::glDrawNetworkModel()
     }
 
     // draw green lines
-    mShaderProgram.setUniformValue("color", QColor(0,255,0,255));
+    mShaderProgram.setUniformValue("color", QColor("lime"));
     glDrawElements(GL_LINES, elements.size(), GL_UNSIGNED_INT, elements.constData());
 
     // draw blue dots
-    mShaderProgram.setUniformValue("color", QColor(0,0,255,255));
+    mShaderProgram.setUniformValue("color", QColor("darkblue"));
     mShaderProgram.setUniformValue("pointSize", float(5.));
     glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
     glDrawArrays( GL_POINTS, 0, m_ventNet->m_junction.size() );
@@ -204,8 +204,8 @@ void XMGLView3D::paintGL()
 
     // Draw gradient background
     QLinearGradient linearGrad( QPointF(0, 0), QPointF(0, height()) );
-    linearGrad.setColorAt( 0, QColor("lightBlue")  );
-    linearGrad.setColorAt( 1, Qt::white );
+    linearGrad.setColorAt( 0, QColor("slategray")  );
+    linearGrad.setColorAt( 1, QColor("skyblue") );
     painter.setBrush( QBrush(linearGrad) );
     painter.drawRect( rect() );
 
@@ -227,8 +227,9 @@ void XMGLView3D::paintGL()
     matViewport.viewport( rect() );
     matViewport.scale(1., -1., 1.);
     for(int i=0; i< m_ventNet->m_junction.size(); i++ ) {
-        QVector3D p = matViewport * m_MVP * m_ventNet->m_junction[i]->point();
-        painter.drawText( p.x(), p.y(), QString::number(i+1) );
+        XMVentJunction *junction = m_ventNet->m_junction[i];
+        QVector3D p = matViewport * m_MVP * junction->point();
+        painter.drawText( p.x(), p.y(), junction->id() );
     }
 
     painter.end();
