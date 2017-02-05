@@ -107,6 +107,28 @@ void XMGLView3D::keyPressEvent( class QKeyEvent *event )
 }
 
 
+void setupShaderProgramFromFiles(
+        QOpenGLShaderProgram &shader,
+        const QString &fileVert,
+        const QString &fileFrag,
+        const char *errorName )
+{
+    // Setup OpenGL ES Shader Program
+    if( !shader.addShaderFromSourceFile(QOpenGLShader::Vertex, fileVert) ) {
+        qFatal("Error compiling vertex shader (%s):\n%s", errorName, shader.log().toStdString().c_str());
+    }
+    if( !shader.addShaderFromSourceFile(QOpenGLShader::Fragment, fileFrag) ) {
+        qFatal("Error compiling fragment shader (%s):\n%s:", errorName, shader.log().toStdString().c_str());
+    }
+    if( !shader.link() ) {
+        qFatal("Error linking shaders (%s):\n%s", errorName, shader.log().toStdString().c_str());
+    }
+    if( !shader.bind() ) {
+        qFatal("Error binding shader (%s).", errorName);
+    }
+}
+
+
 /// Set up the rendering context, define display lists etc.
 void XMGLView3D::initializeGL()
 {
@@ -114,20 +136,7 @@ void XMGLView3D::initializeGL()
 
     glClearColor( 1., 1., 1., 1. );
 
-    // Setup OpenGL ES Shader Program
-    if( !mShaderProgram.addShaderFromSourceFile(QOpenGLShader::Vertex, ":/shaders/basic.vert") ) {
-        qFatal("Error compiling vertex shader:\n%s", mShaderProgram.log().toStdString().c_str());
-    }
-    if( !mShaderProgram.addShaderFromSourceFile(QOpenGLShader::Fragment, ":/shaders/basic.frag") ) {
-        qFatal("Error compiling fragment shader:\n%s:", mShaderProgram.log().toStdString().c_str());
-    }
-    if( !mShaderProgram.link() ) {
-        qFatal("Error linking shaders:\n%s", mShaderProgram.log().toStdString().c_str());
-    }
-    if( !mShaderProgram.bind() ) {
-        qFatal("Error binding shader.");
-    }
-
+    setupShaderProgramFromFiles(mShaderProgram, ":/shaders/basic.vert", ":/shaders/basic.frag", "mShaderProgram");
 }
 
 
@@ -175,7 +184,8 @@ void XMGLView3D::glDrawNetworkModel()
 
     // draw blue dots
     mShaderProgram.setUniformValue("color", QColor(0,0,255,255));
-//    glPointSize( 5.f );       // TODO GLES: set gl_PointSize in vertex shader
+    mShaderProgram.setUniformValue("pointSize", float(5.));
+    glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
     glDrawArrays( GL_POINTS, 0, m_ventNet->m_junction.size() );
 
     // cleanup and make safe until next time
