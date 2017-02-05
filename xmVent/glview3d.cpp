@@ -27,6 +27,7 @@
 #include <QPinchGesture>
 #include <QDebug>
 #include <QFileDialog>
+#include <QPainter>
 
 #include "glcamera.h"
 #include "xmVent-lib/network.h"
@@ -197,13 +198,40 @@ void XMGLView3D::glDrawNetworkModel()
 /// draw the scene
 void XMGLView3D::paintGL()
 {
-    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-
     m_MVP = m_camera->glViewMatrix( width(), height() );
 
-    mShaderProgram.setUniformValue("matrix", m_MVP);
+    QPainter painter(this);
 
+    // Draw gradient background
+    QLinearGradient linearGrad( QPointF(0, 0), QPointF(0, height()) );
+    linearGrad.setColorAt( 0, QColor("lightBlue")  );
+    linearGrad.setColorAt( 1, Qt::white );
+    painter.setBrush( QBrush(linearGrad) );
+    painter.drawRect( rect() );
+
+    // Draw 3D model
+    painter.beginNativePainting();
+
+    glClear( GL_DEPTH_BUFFER_BIT );
+
+    mShaderProgram.bind();
+    mShaderProgram.setUniformValue("matrix", m_MVP);
     glDrawNetworkModel();
+
+    painter.endNativePainting();
+
+    // Draw Junction Id
+    painter.setPen( Qt::black );
+    painter.setFont( QFont() );
+    QMatrix4x4 matViewport;
+    matViewport.viewport( rect() );
+    matViewport.scale(1., -1., 1.);
+    for(int i=0; i< m_ventNet->m_junction.size(); i++ ) {
+        QVector3D p = matViewport * m_MVP * m_ventNet->m_junction[i]->point();
+        painter.drawText( p.x(), p.y(), QString::number(i+1) );
+    }
+
+    painter.end();
 }
 
 
