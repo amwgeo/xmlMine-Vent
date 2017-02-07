@@ -137,7 +137,12 @@ void XMGLView3D::initializeGL()
 
     glClearColor( 1., 1., 1., 1. );
 
-    setupShaderProgramFromFiles(mShaderProgram, ":/shaders/basic.vert", ":/shaders/basic.frag", "mShaderProgram");
+    qDebug() << "GL Version: " << QString::fromLocal8Bit((const char*)glGetString(GL_VERSION));
+    qDebug() << "GLSL Version: " << QString::fromLocal8Bit((const char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
+    qDebug() << "GL Extensions: "  << QString::fromLocal8Bit((const char*)glGetString(GL_EXTENSIONS));
+
+    setupShaderProgramFromFiles( mShaderBasic, ":/shaders/basic.vert", ":/shaders/basic.frag", "mShaderBasic");
+    setupShaderProgramFromFiles( mShaderNodes, ":/shaders/nodes.vert", ":/shaders/nodes.frag","mShaderNodes" );
 }
 
 
@@ -149,11 +154,58 @@ void XMGLView3D::resizeGL(int width, int height)
 }
 
 
+void XMGLView3D::glDrawNetworkNodes( const QVector<QVector3D> &vertexData )
+{
+    // draw blue dots (old way)
+    //mShaderBasic.setUniformValue("color", QColor("darkblue"));
+    //mShaderBasic.setUniformValue("pointSize", float(5.));
+    //glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
+    //glDrawArrays( GL_POINTS, 0, m_ventNet->m_junction.size() );
+
+    // draw ichosahedrons (new way)
+    const float a = 0.525731112119134;
+    const float b = 0.850650808352040;
+    const static QVector<QVector3D> ichosaVert( {
+                        QVector3D(0,a,b),   QVector3D(0,a,-b), QVector3D(0,-a,b),
+                        QVector3D(0,-a,-b), QVector3D(a,b,0),  QVector3D(a,-b,0),
+                        QVector3D(-a,b,0),  QVector3D(-a,-b,0),QVector3D(b,0,a),
+                        QVector3D(-b,0,a),  QVector3D(b,0,-a), QVector3D(-b,0,-a) } );
+
+    const static QVector<GLuint> triElements( {
+                        0,2,8,  0,8,4,  0,4,6,  0,6,9,  0,9,2,
+                        1,10,3, 1,3,11, 1,11,6, 1,6,4,  1,4,10,
+                        2,9,7,  2,7,5,  2,5,8,  3,10,5, 3,5,7,
+                        3,7,11, 4,8,10, 5,10,8, 6,11,9, 7,9,11 } );
+
+    mShaderNodes.bind();
+    mShaderNodes.setUniformValue("u_matMVP", m_MVP);
+    mShaderNodes.setUniformValue("u_matMV", m_MV);
+    mShaderNodes.setUniformValue("u_matNorm", m_Norm);
+    mShaderNodes.enableAttributeArray("a_vertex");
+    mShaderNodes.setAttributeArray("a_vertex", ichosaVert.constData());
+    mShaderNodes.enableAttributeArray("a_normal");
+    mShaderNodes.setAttributeArray("a_normal", ichosaVert.constData());
+    mShaderNodes.setUniformValue("u_size",GLfloat(5));
+    mShaderNodes.setUniformValue("u_coluorMaterial", QColor("darkred") );
+    mShaderNodes.setUniformValueArray("a_offset",vertexData.constData(), vertexData.size() );
+//    glDrawElements( GL_TRIANGLES, triElements.size(), GL_UNSIGNED_INT, triElements.constData() );
+    glDrawElementsInstanced(
+                GL_TRIANGLES,
+                triElements.size(),
+                GL_UNSIGNED_INT,
+                triElements.constData(),
+                vertexData.size() );
+
+    mShaderNodes.disableAttributeArray("a_vertex");
+    mShaderNodes.disableAttributeArray("a_normal");
+}
+
+
 void XMGLView3D::glDrawNetworkModel()
 {
     if(m_ventNet == 0 || m_ventNet->m_junction.size() == 0) return;
 
-    mShaderProgram.enableAttributeArray("vertex");
+    mShaderBasic.enableAttributeArray("vertex");
 
     //TODO: figure out direct access to data stored in existing junction vector ...
     //int stride = 0;
@@ -163,14 +215,13 @@ void XMGLView3D::glDrawNetworkModel()
     //}
     //QVector3D *data2 = &(m_ventNet->m_junction[0]->m_point);
     //QVector3D *data = (QVector3D*)(m_ventNet->m_junction.data() + offsetof(class XMVentJunction, m_point));
-    //mShaderProgram.setAttributeArray("vertex", data, stride);
+    //mShaderBasic.setAttributeArray("vertex", data, stride);
 
     // copy out vertex data into convienient for purpose vector ...
     QVector<QVector3D> vertexData;
     for(int i=0; i< m_ventNet->m_junction.size(); i++ ) {
         vertexData.append(m_ventNet->m_junction[i]->point());
     }
-    mShaderProgram.setAttributeArray("vertex", vertexData.constData());
 
     // copy out element data from branches
     QVector<GLuint> elements;
@@ -180,17 +231,15 @@ void XMGLView3D::glDrawNetworkModel()
     }
 
     // draw green lines
-    mShaderProgram.setUniformValue("color", QColor("lime"));
+    mShaderBasic.bind();
+    mShaderBasic.setAttributeArray("vertex", vertexData.constData());
+    mShaderBasic.setUniformValue("matrix", m_MVP);
+    mShaderBasic.setUniformValue("color", QColor("lime"));
     glDrawElements(GL_LINES, elements.size(), GL_UNSIGNED_INT, elements.constData());
+    mShaderBasic.disableAttributeArray("vertex");
 
-    // draw blue dots
-    mShaderProgram.setUniformValue("color", QColor("darkblue"));
-    mShaderProgram.setUniformValue("pointSize", float(5.));
-    glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
-    glDrawArrays( GL_POINTS, 0, m_ventNet->m_junction.size() );
-
-    // cleanup and make safe until next time
-    mShaderProgram.disableAttributeArray("vertex");
+    // draw the nodes
+    glDrawNetworkNodes( vertexData );
 
 }
 
@@ -198,7 +247,9 @@ void XMGLView3D::glDrawNetworkModel()
 /// draw the scene
 void XMGLView3D::paintGL()
 {
-    m_MVP = m_camera->glViewMatrix( width(), height() );
+    m_MV = m_camera->glViewMatrix();
+    m_MVP = m_camera->glProjMatrix( width(), height() ) * m_MV;
+    m_Norm = m_MV.normalMatrix();
 
     QPainter painter(this);
 
@@ -213,10 +264,11 @@ void XMGLView3D::paintGL()
     painter.beginNativePainting();
 
     glClear( GL_DEPTH_BUFFER_BIT );
+    glEnable( GL_CULL_FACE );
 
-    mShaderProgram.bind();
-    mShaderProgram.setUniformValue("matrix", m_MVP);
     glDrawNetworkModel();
+
+    glDisable( GL_CULL_FACE );
 
     painter.endNativePainting();
 
@@ -226,6 +278,8 @@ void XMGLView3D::paintGL()
     QMatrix4x4 matViewport;
     matViewport.viewport( rect() );
     matViewport.scale(1., -1., 1.);
+
+    // network node id
     for(int i=0; i< m_ventNet->m_junction.size(); i++ ) {
         XMVentJunction *junction = m_ventNet->m_junction[i];
         QVector3D p = matViewport * m_MVP * junction->point();

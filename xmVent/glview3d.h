@@ -26,11 +26,11 @@
 
 #include <QOpenGLWidget>
 #include <QOpenGLShaderProgram>
-#include <QOpenGLFunctions>
-#include <QMatrix4x4>
+#include <QOpenGLExtraFunctions>
+#include <QMatrix>
 
 
-class XMGLView3D : public QOpenGLWidget, protected QOpenGLFunctions
+class XMGLView3D : public QOpenGLWidget, protected QOpenGLExtraFunctions
 {
     Q_OBJECT        // must include this if you use Qt signals/slots
 
@@ -39,9 +39,12 @@ public:
 
     class XMVentNetwork* m_ventNet;
     class XMGLCamera* m_camera;
-    class QMatrix4x4 m_MVP;
+    QMatrix4x4 m_MV;
+    QMatrix4x4 m_MVP;
+    QMatrix3x3 m_Norm;
 
     void glDrawNetworkModel();
+    void glDrawNetworkNodes( const QVector<QVector3D> &vertexData );
 
 protected:
     bool event(QEvent *event);
@@ -55,7 +58,8 @@ protected:
     void paintGL();
 
     // OpenGL ES Shader
-    QOpenGLShaderProgram mShaderProgram;
+    QOpenGLShaderProgram mShaderBasic;
+    QOpenGLShaderProgram mShaderNodes;
 
 signals:
     void changed();

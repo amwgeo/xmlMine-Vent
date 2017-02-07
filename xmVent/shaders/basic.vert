@@ -1,4 +1,7 @@
+#version 120
+
 attribute highp vec4 vertex;
+
 uniform highp mat4 matrix;
 uniform float pointSize;
 

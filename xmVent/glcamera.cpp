@@ -138,12 +138,18 @@ void XMGLCamera::setHorizontalFOV( float fov )
     m_horizontalFOV = fov;
 }
 
-
-QMatrix4x4 XMGLCamera::glViewMatrix( int width, int height )
+QMatrix4x4 XMGLCamera::glProjMatrix( int width, int height ) const
 {
     QMatrix4x4 mat;
     float aspect = float(width) / height;
     mat.perspective( 45., aspect, 0.01*m_distance, 100.*m_distance );
+
+    return mat;
+}
+
+QMatrix4x4 XMGLCamera::glViewMatrix() const
+{
+    QMatrix4x4 mat;
     mat.translate( 0., 0., -m_distance );           // Stand back distance
     mat.rotate( m_zenith, -1., 0., 0. );            // Rotate Zenuth Angle
     mat.rotate( m_azimuth, 0., 0., 1. );            // Rotate for Azimuth

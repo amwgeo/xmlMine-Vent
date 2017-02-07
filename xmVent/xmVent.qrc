@@ -5,5 +5,7 @@
         <file>translation/xmVent.fr.qm</file>
         <file>shaders/basic.frag</file>
         <file>shaders/basic.vert</file>
+        <file>shaders/nodes.frag</file>
+        <file>shaders/nodes.vert</file>
     </qresource>
 </RCC>
