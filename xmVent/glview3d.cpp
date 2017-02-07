@@ -188,13 +188,26 @@ void XMGLView3D::glDrawNetworkNodes( const QVector<QVector3D> &vertexData )
     mShaderNodes.setUniformValue("u_size",GLfloat(5));
     mShaderNodes.setUniformValue("u_coluorMaterial", QColor("darkred") );
     mShaderNodes.setUniformValueArray("a_offset",vertexData.constData(), vertexData.size() );
-//    glDrawElements( GL_TRIANGLES, triElements.size(), GL_UNSIGNED_INT, triElements.constData() );
-    glDrawElementsInstanced(
-                GL_TRIANGLES,
-                triElements.size(),
-                GL_UNSIGNED_INT,
-                triElements.constData(),
-                vertexData.size() );
+
+    // Draw the really inefficient way ...
+    for( int i=0; i<vertexData.count(); i++ ) {
+        QMatrix4x4 MVP = m_MVP;
+        MVP.translate( vertexData[i] );
+        mShaderNodes.setUniformValue("u_matMVP", MVP);
+        QMatrix4x4 MV = m_MV;
+        MV.translate( vertexData[i] );
+        mShaderNodes.setUniformValue("u_matMV", MV);
+        mShaderNodes.setUniformValue("u_matNorm", MV.normalMatrix());
+        glDrawElements( GL_TRIANGLES, triElements.size(), GL_UNSIGNED_INT, triElements.constData() );
+    }
+
+    // TODO: get instance working ...
+    //glDrawElementsInstanced(
+    //            GL_TRIANGLES,
+    //            triElements.size(),
+    //            GL_UNSIGNED_INT,
+    //            triElements.constData(),
+    //            vertexData.size() );
 
     mShaderNodes.disableAttributeArray("a_vertex");
     mShaderNodes.disableAttributeArray("a_normal");
