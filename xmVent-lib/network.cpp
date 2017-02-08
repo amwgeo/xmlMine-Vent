@@ -160,13 +160,15 @@ public:
         static bool oneTime = true;
 
         if( oneTime ) {
-            qmlRegisterType<XMVentFan>("com.mycompany.xmlmine", 1, 0, "XMVentFan");
-            qmlRegisterType<QFile>("io.qt.core", 1, 0, "QFile");
+	    // not available in Qt5.5?
+            //qmlRegisterType<XMVentFan>("com.mycompany.xmlmine", 1, 0, "XMVentFan");
+            //qmlRegisterType<QFile>("io.qt.core", 1, 0, "QFile");
             oneTime = false;
         }
 
         // TODO: import extensions in lieu of "qt.core"
-        myEngine.installExtensions( QJSEngine::AllExtensions );
+	// only available in Qt5.6
+        //myEngine.installExtensions( QJSEngine::AllExtensions );
 
         QJSValue objectNet = myEngine.newQObject( &m_ventNet );
         myEngine.globalObject().setProperty( "net", objectNet );
