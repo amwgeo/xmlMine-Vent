@@ -202,6 +202,7 @@ void XMGLView3D::glDrawNetworkNodes( const QVector<QVector3D> &vertexData )
                 triElements.constData(),
                 vertexData.size() );
 
+    glVertexAttribDivisor( locOffset, 0 );
     mShaderNodes.disableAttributeArray("a_vertex");
     mShaderNodes.disableAttributeArray("a_normal");
     mShaderNodes.disableAttributeArray(locOffset);
