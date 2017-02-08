@@ -177,6 +177,7 @@ void XMGLView3D::glDrawNetworkNodes( const QVector<QVector3D> &vertexData )
                         2,9,7,  2,7,5,  2,5,8,  3,10,5, 3,5,7,
                         3,7,11, 4,8,10, 5,10,8, 6,11,9, 7,9,11 } );
 
+    // load the shader and setup shader parameters
     mShaderNodes.bind();
     mShaderNodes.setUniformValue("u_matMVP", m_MVP);
     mShaderNodes.setUniformValue("u_matMV", m_MV);
@@ -187,30 +188,23 @@ void XMGLView3D::glDrawNetworkNodes( const QVector<QVector3D> &vertexData )
     mShaderNodes.setAttributeArray("a_normal", ichosaVert.constData());
     mShaderNodes.setUniformValue("u_size",GLfloat(5));
     mShaderNodes.setUniformValue("u_coluorMaterial", QColor("darkred") );
-    mShaderNodes.setUniformValueArray("a_offset",vertexData.constData(), vertexData.size() );
 
-    // Draw the really inefficient way ...
-    for( int i=0; i<vertexData.count(); i++ ) {
-        QMatrix4x4 MVP = m_MVP;
-        MVP.translate( vertexData[i] );
-        mShaderNodes.setUniformValue("u_matMVP", MVP);
-        QMatrix4x4 MV = m_MV;
-        MV.translate( vertexData[i] );
-        mShaderNodes.setUniformValue("u_matMV", MV);
-        mShaderNodes.setUniformValue("u_matNorm", MV.normalMatrix());
-        glDrawElements( GL_TRIANGLES, triElements.size(), GL_UNSIGNED_INT, triElements.constData() );
-    }
+    // Each node is drawn at a different locaiton
+    GLuint locOffset = mShaderNodes.attributeLocation( "a_offset" );
+    mShaderNodes.enableAttributeArray(locOffset);
+    mShaderNodes.setAttributeArray( locOffset, vertexData.constData() );
+    glVertexAttribDivisor( locOffset, 1 );
 
-    // TODO: get instance working ...
-    //glDrawElementsInstanced(
-    //            GL_TRIANGLES,
-    //            triElements.size(),
-    //            GL_UNSIGNED_INT,
-    //            triElements.constData(),
-    //            vertexData.size() );
+    glDrawElementsInstanced(
+                GL_TRIANGLES,
+                triElements.size(),
+                GL_UNSIGNED_INT,
+                triElements.constData(),
+                vertexData.size() );
 
     mShaderNodes.disableAttributeArray("a_vertex");
     mShaderNodes.disableAttributeArray("a_normal");
+    mShaderNodes.disableAttributeArray(locOffset);
 }
 
 
