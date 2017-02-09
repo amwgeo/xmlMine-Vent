@@ -165,17 +165,18 @@ void XMGLView3D::glDrawNetworkNodes( const QVector<QVector3D> &vertexData )
     // draw ichosahedrons (new way)
     const float a = 0.525731112119134;
     const float b = 0.850650808352040;
-    const static QVector<QVector3D> ichosaVert( {
-                        QVector3D(0,a,b),   QVector3D(0,a,-b), QVector3D(0,-a,b),
-                        QVector3D(0,-a,-b), QVector3D(a,b,0),  QVector3D(a,-b,0),
-                        QVector3D(-a,b,0),  QVector3D(-a,-b,0),QVector3D(b,0,a),
-                        QVector3D(-b,0,a),  QVector3D(b,0,-a), QVector3D(-b,0,-a) } );
+    const static GLfloat ichosaVert[] = {
+                        0,a,b,   0,a,-b, 0,-a,b,
+                        0,-a,-b, a,b,0,  a,-b,0,
+                        -a,b,0,  -a,-b,0,b,0,a,
+                        -b,0,a,  b,0,-a, -b,0,-a };
 
-    const static QVector<GLuint> triElements( {
+    const static GLuint triElements[] = {
                         0,2,8,  0,8,4,  0,4,6,  0,6,9,  0,9,2,
                         1,10,3, 1,3,11, 1,11,6, 1,6,4,  1,4,10,
                         2,9,7,  2,7,5,  2,5,8,  3,10,5, 3,5,7,
-                        3,7,11, 4,8,10, 5,10,8, 6,11,9, 7,9,11 } );
+                        3,7,11, 4,8,10, 5,10,8, 6,11,9, 7,9,11 };
+    const static GLuint triElements_size = 60;
 
     // load the shader and setup shader parameters
     mShaderNodes.bind();
@@ -183,9 +184,9 @@ void XMGLView3D::glDrawNetworkNodes( const QVector<QVector3D> &vertexData )
     mShaderNodes.setUniformValue("u_matMV", m_MV);
     mShaderNodes.setUniformValue("u_matNorm", m_Norm);
     mShaderNodes.enableAttributeArray("a_vertex");
-    mShaderNodes.setAttributeArray("a_vertex", ichosaVert.constData());
+    mShaderNodes.setAttributeArray("a_vertex", ichosaVert, 3);
     mShaderNodes.enableAttributeArray("a_normal");
-    mShaderNodes.setAttributeArray("a_normal", ichosaVert.constData());
+    mShaderNodes.setAttributeArray("a_normal", ichosaVert, 3);
     mShaderNodes.setUniformValue("u_size",GLfloat(5));
     mShaderNodes.setUniformValue("u_coluorMaterial", QColor("darkred") );
 
@@ -197,12 +198,13 @@ void XMGLView3D::glDrawNetworkNodes( const QVector<QVector3D> &vertexData )
 
     glDrawElementsInstanced(
                 GL_TRIANGLES,
-                triElements.size(),
+                triElements_size,
                 GL_UNSIGNED_INT,
-                triElements.constData(),
+                triElements,
                 vertexData.size() );
 
     glVertexAttribDivisor( locOffset, 0 );
+//*/
     mShaderNodes.disableAttributeArray("a_vertex");
     mShaderNodes.disableAttributeArray("a_normal");
     mShaderNodes.disableAttributeArray(locOffset);

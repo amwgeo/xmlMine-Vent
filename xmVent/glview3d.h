@@ -24,13 +24,26 @@
 #ifndef XMVENTGLVIEW3D_H
 #define XMVENTGLVIEW3D_H
 
+#include <QtGlobal>
+
+#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
+    #include <QOpenGLExtraFunctions>
+#else
+    #define GL_GLEXT_PROTOTYPES
+    #include <GL/gl.h>
+#endif
+
+
 #include <QOpenGLWidget>
 #include <QOpenGLShaderProgram>
-#include <QOpenGLExtraFunctions>
 #include <QMatrix>
 
-
-class XMGLView3D : public QOpenGLWidget, protected QOpenGLExtraFunctions
+#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
+    class XMGLView3D : public QOpenGLWidget, protected QOpenGLExtraFunctions
+#else
+    #include <QOpenGLFunctions>
+    class XMGLView3D : public QOpenGLWidget, protected QOpenGLFunctions
+#endif
 {
     Q_OBJECT        // must include this if you use Qt signals/slots
 
