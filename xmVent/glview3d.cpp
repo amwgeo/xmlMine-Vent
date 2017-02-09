@@ -28,6 +28,7 @@
 #include <QDebug>
 #include <QFileDialog>
 #include <QPainter>
+#include <QtMath>
 
 #include "glcamera.h"
 #include "xmVent-lib/network.h"
@@ -73,11 +74,54 @@ void XMGLView3D::mousePressEvent(QMouseEvent *event)
 {
     // TODO: case structure?
     if(event->button() == Qt::LeftButton) {	// click
-	// event->pos();
-	// TODO: ray tracing to find object?
-    } else if(event->button() == Qt::MidButton) {
-	// TODO: drag move for rotate?
-	lastPos = event->pos();
+        // ray tracing to find object
+        QMatrix4x4 matUnproject = m_MVP.inverted();
+
+        // Normalized Device Space (NDS) xyz = {-1..+1}
+        QVector4D nearNCS(
+                    2.*float(event->pos().x()) / width() - 1.,
+                    1. - 2. * float(event->pos().y()) / height(),
+                    -1.,
+                    1. );
+        QVector4D farNCS(nearNCS);
+        farNCS.setZ( 1. );
+
+        QVector4D nearWorld( matUnproject * nearNCS );
+        nearWorld /= nearWorld.w();
+        QVector4D farWorld( matUnproject * farNCS );
+        farWorld /= farWorld.w();
+
+        QVector3D ray(farWorld - nearWorld);
+        ray.normalize();
+
+        QVector3D ptNear(nearWorld);
+        qDebug() << "ptNear: " << ptNear;
+        qDebug() << "ray: " << ray;
+
+        int bestId = -1;
+        float bestValue = qInf();
+        qDebug() << "Click on Junctions ...";
+        for( int i=0; i<m_ventNet->m_junction.size(); i++ ) {
+            QVector3D u( m_ventNet->m_junction[i]->point() - ptNear );
+            float dist = QVector3D::dotProduct(u, ray);
+
+            // TODO: eliminate square root for speed
+            float perp = qSqrt(QVector3D::dotProduct(u, u) - dist*dist);
+
+            qDebug() << m_ventNet->m_junction[i]->id() << dist << perp << (perp/dist);
+
+            float value = perp/dist;
+            if( dist >= 0 && value < bestValue ) {
+                bestId = i;
+                bestValue = value;
+            }
+        }
+
+        // remember id in this case is a string associated with the junction
+        qDebug() << "Best ID:" << m_ventNet->m_junction[bestId]->id();
+
+    } else if(event->button() == Qt::MidButton) { // roll around model
+        lastPos = event->pos();
     }
 }
 
@@ -241,7 +285,6 @@ void XMGLView3D::glDrawNetworkNodes( const QVector<QVector3D> &vertexData )
                 vertexData.size() );
 
     glVertexAttribDivisor( locOffset, 0 );
-//*/
     mShaderNodes.disableAttributeArray("a_vertex");
     mShaderNodes.disableAttributeArray("a_normal");
     mShaderNodes.disableAttributeArray(locOffset);
