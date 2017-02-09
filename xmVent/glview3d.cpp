@@ -70,56 +70,69 @@ bool XMGLView3D::event(QEvent *event)
 }
 
 
+void XMGLView3D::selectEvent(const QPoint &pos)
+{
+    // ray tracing to find object
+    QMatrix4x4 matUnproject = m_MVP.inverted();
+
+    // Normalized Device Space (NDS) xyz = {-1..+1}
+    QVector4D nearNCS(
+                2.*float(pos.x()) / width() - 1.,
+                1. - 2. * float(pos.y()) / height(),
+                -1.,
+                1. );
+    QVector4D farNCS(nearNCS);
+    farNCS.setZ( 1. );
+
+    QVector4D nearWorld( matUnproject * nearNCS );
+    nearWorld /= nearWorld.w();
+    QVector4D farWorld( matUnproject * farNCS );
+    farWorld /= farWorld.w();
+
+    QVector3D ray(farWorld - nearWorld);
+    ray.normalize();
+
+    QVector3D ptNear(nearWorld);
+
+    int bestId = -1;
+    float bestValue = qInf();
+    for( int i=0; i<m_ventNet->m_junction.size(); i++ ) {
+        QVector3D u( m_ventNet->m_junction[i]->point() - ptNear );
+        float dist = QVector3D::dotProduct(u, ray);
+
+        // TODO: eliminate square root for speed
+        float perp2 = QVector3D::dotProduct(u, u) - dist*dist;
+
+        // Tolerance test
+        const float tolerance_limit = 0.0003;
+        float tolerance = perp2 /dist / dist;    // ratio of (perp/dist)^2
+
+        // TODO: far test
+        if( dist >= 0 && tolerance<tolerance_limit && dist < bestValue ) {
+            // find closest junction; in front of near; within a narrow cone (tol)
+            bestId = i;
+            bestValue = dist;
+        }
+    }
+
+    // remember id in this case is a string associated with the junction
+    if( bestId == -1 ) {
+        qDebug() << "Did not click on a junction.";
+    } else {
+        qDebug() << "Recentre view on Junction ID:" << m_ventNet->m_junction[bestId]->id();
+        QVector3D junction( m_ventNet->m_junction[bestId]->point() );
+
+        // TODO: make an overload for QVector3D
+        m_camera->setFocalPoint(junction.x(), junction.y(), junction.z() );
+    }
+}
+
+
 void XMGLView3D::mousePressEvent(QMouseEvent *event)
 {
     // TODO: case structure?
     if(event->button() == Qt::LeftButton) {	// click
-        // ray tracing to find object
-        QMatrix4x4 matUnproject = m_MVP.inverted();
-
-        // Normalized Device Space (NDS) xyz = {-1..+1}
-        QVector4D nearNCS(
-                    2.*float(event->pos().x()) / width() - 1.,
-                    1. - 2. * float(event->pos().y()) / height(),
-                    -1.,
-                    1. );
-        QVector4D farNCS(nearNCS);
-        farNCS.setZ( 1. );
-
-        QVector4D nearWorld( matUnproject * nearNCS );
-        nearWorld /= nearWorld.w();
-        QVector4D farWorld( matUnproject * farNCS );
-        farWorld /= farWorld.w();
-
-        QVector3D ray(farWorld - nearWorld);
-        ray.normalize();
-
-        QVector3D ptNear(nearWorld);
-        qDebug() << "ptNear: " << ptNear;
-        qDebug() << "ray: " << ray;
-
-        int bestId = -1;
-        float bestValue = qInf();
-        qDebug() << "Click on Junctions ...";
-        for( int i=0; i<m_ventNet->m_junction.size(); i++ ) {
-            QVector3D u( m_ventNet->m_junction[i]->point() - ptNear );
-            float dist = QVector3D::dotProduct(u, ray);
-
-            // TODO: eliminate square root for speed
-            float perp = qSqrt(QVector3D::dotProduct(u, u) - dist*dist);
-
-            qDebug() << m_ventNet->m_junction[i]->id() << dist << perp << (perp/dist);
-
-            float value = perp/dist;
-            if( dist >= 0 && value < bestValue ) {
-                bestId = i;
-                bestValue = value;
-            }
-        }
-
-        // remember id in this case is a string associated with the junction
-        qDebug() << "Best ID:" << m_ventNet->m_junction[bestId]->id();
-
+        selectEvent( event->pos() );
     } else if(event->button() == Qt::MidButton) { // roll around model
         lastPos = event->pos();
     }

@@ -61,6 +61,7 @@ public:
 
 protected:
     bool event(QEvent *event);
+    void selectEvent(const QPoint &pos);
     void mousePressEvent(QMouseEvent *event);
     void mouseMoveEvent(QMouseEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
