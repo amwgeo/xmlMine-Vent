@@ -61,6 +61,10 @@ public:
 
 protected:
     bool event(QEvent *event);
+    void mousePressEvent(QMouseEvent *event);
+    void mouseMoveEvent(QMouseEvent *event);
+    void mouseReleaseEvent(QMouseEvent *event);
+    void wheelEvent(QWheelEvent *event);
     bool gestureEvent( class QGestureEvent *event );
     void pinchTriggered( class QPinchGesture *gesture );
     void keyPressEvent( class QKeyEvent *event );
@@ -73,6 +77,9 @@ protected:
     // OpenGL ES Shader
     QOpenGLShaderProgram mShaderBasic;
     QOpenGLShaderProgram mShaderNodes;
+
+    // Mouse Event Last Posision
+    QPointF lastPos;
 
 signals:
     void changed();

@@ -69,6 +69,43 @@ bool XMGLView3D::event(QEvent *event)
 }
 
 
+void XMGLView3D::mousePressEvent(QMouseEvent *event)
+{
+    // TODO: case structure?
+    if(event->button() == Qt::LeftButton) {	// click
+	// event->pos();
+	// TODO: ray tracing to find object?
+    } else if(event->button() == Qt::MidButton) {
+	// TODO: drag move for rotate?
+	lastPos = event->pos();
+    }
+}
+
+
+void XMGLView3D::mouseMoveEvent(QMouseEvent *event)
+{
+    if( event->buttons() == Qt::MidButton ) {
+	QPointF dXY = lastPos - event->pos();
+	lastPos = event->pos();
+
+	// TODO: check these multipliers on different platforms ...
+	m_camera->rotateHorizontal( -dXY.x() / 3. );
+	m_camera->rotateVertical( dXY.y() / 3. );
+    }
+}
+
+
+void XMGLView3D::mouseReleaseEvent(QMouseEvent * /*event*/)
+{
+}
+
+
+void XMGLView3D::wheelEvent(QWheelEvent *event)
+{
+    m_camera->rotateVertical( event->angleDelta().y() / 10. );
+}
+
+
 bool XMGLView3D::gestureEvent(QGestureEvent *event)
 {
     if( QGesture *pinch = event->gesture(Qt::PinchGesture) )
