@@ -366,11 +366,15 @@ void XMGLView3D::paintGL()
     // Draw 3D model
     painter.beginNativePainting();
 
+    // get ready for drawing GL
     glClear( GL_DEPTH_BUFFER_BIT );
     glEnable( GL_CULL_FACE );
+    glEnable( GL_DEPTH_TEST );
 
     glDrawNetworkModel();
 
+    // return things to normal
+    glDisable( GL_DEPTH_TEST );
     glDisable( GL_CULL_FACE );
 
     painter.endNativePainting();
