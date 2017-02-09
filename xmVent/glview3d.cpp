@@ -386,7 +386,9 @@ void XMGLView3D::paintGL()
     for(int i=0; i< m_ventNet->m_junction.size(); i++ ) {
         XMVentJunction *junction = m_ventNet->m_junction[i];
         QVector3D p = matViewport * m_MVP * junction->point();
-        painter.drawText( p.x(), p.y(), junction->id() );
+        if(p.z() >= -1 && p.z() <= 1) {
+            painter.drawText( p.x(), p.y(), junction->id() );
+        }
     }
 
     painter.end();
