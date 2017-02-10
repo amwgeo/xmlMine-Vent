@@ -39,7 +39,8 @@
 
 XMGLView3D::XMGLView3D( QWidget *parent ):
         QOpenGLWidget( parent ),
-        m_vboNodes( QOpenGLBuffer::VertexBuffer )
+        m_vboNodes( QOpenGLBuffer::VertexBuffer ),
+        m_iboNodes( QOpenGLBuffer::IndexBuffer )
 {
     // TODO: memory leak or delete from parent?
     m_camera = new XMGLCamera( this );
@@ -251,7 +252,6 @@ void setupNodeVBO(
     vbo.write( offsetToOffsetVert, offsetVert.constData(), offsetVert.size()*3*sizeof(GLfloat) );
 
     vbo.release();
-
 }
 
 
@@ -269,8 +269,21 @@ void XMGLView3D::initializeGL()
     setupShaderProgramFromFiles( mShaderBasic, ":/shaders/basic.vert", ":/shaders/basic.frag", "mShaderBasic");
     setupShaderProgramFromFiles( mShaderNodes, ":/shaders/nodes.vert", ":/shaders/nodes.frag","mShaderNodes" );
 
+    // setup verte buffer object (data loaded later)
     m_vboNodes.create();
     m_vboNodes.setUsagePattern( QOpenGLBuffer::DynamicDraw );
+
+    // setup index buffer object
+    m_iboNodes.create();
+    m_iboNodes.setUsagePattern( QOpenGLBuffer::StaticDraw );
+    const static GLuint tristripIndex[] = {
+        0, 2, 8, 5, 10, 3, 1, 11, 6, 9, 0, 2,
+        2, 0, 0, 8, 4, 10, 1, 1, 1, 6, 4, 0,
+        0, 3, 3, 5, 7, 2, 9, 9, 9, 11, 7, 3
+    };
+    m_iboNodes.bind();
+    m_iboNodes.allocate( tristripIndex, sizeof(tristripIndex) );
+    m_iboNodes.release();
 }
 
 
@@ -293,28 +306,23 @@ void XMGLView3D::glDrawNetworkNodes( const QVector<QVector3D> &vertexData )
     // TODO: this only needs to be done when model data changes; setup signals
     setupNodeVBO( m_vboNodes, vertexData);
 
-    // draw ichosahedrons using VBO
-    const static GLuint triElements[] = {
-                        0,2,8,  0,8,4,  0,4,6,  0,6,9,  0,9,2,
-                        1,10,3, 1,3,11, 1,11,6, 1,6,4,  1,4,10,
-                        2,9,7,  2,7,5,  2,5,8,  3,10,5, 3,5,7,
-                        3,7,11, 4,8,10, 5,10,8, 6,11,9, 7,9,11 };
-    const static GLuint triElements_size = 60;
+    // draw ichosahedrons using VBO / IBO
 
     // load the shader and setup shader parameters
     mShaderNodes.bind();
     m_vboNodes.bind();
+    m_iboNodes.bind();
 
-    mShaderNodes.setUniformValue("u_matMVP", m_MVP);
-    mShaderNodes.setUniformValue("u_matMV", m_MV);
-    mShaderNodes.setUniformValue("u_matNorm", m_Norm);
-    mShaderNodes.setUniformValue("u_size", GLfloat(5));
-    mShaderNodes.setUniformValue("u_coluorMaterial", QColor("darkred") );
+    mShaderNodes.setUniformValue( "u_matMVP", m_MVP );
+    mShaderNodes.setUniformValue( "u_matMV", m_MV );
+    mShaderNodes.setUniformValue( "u_matNorm", m_Norm );
+    mShaderNodes.setUniformValue( "u_size", GLfloat(5.) );
+    mShaderNodes.setUniformValue( "u_coluorMaterial", QColor("darkred") );
 
-    mShaderNodes.enableAttributeArray("a_vertex");
-    mShaderNodes.enableAttributeArray("a_normal");
-    mShaderNodes.setAttributeBuffer("a_vertex", GL_FLOAT, 0, 3);
-    mShaderNodes.setAttributeBuffer("a_normal", GL_FLOAT, 0, 3);
+    mShaderNodes.enableAttributeArray( "a_vertex" );
+    mShaderNodes.enableAttributeArray( "a_normal" );
+    mShaderNodes.setAttributeBuffer( "a_vertex", GL_FLOAT, 0, 3 );
+    mShaderNodes.setAttributeBuffer( "a_normal", GL_FLOAT, 0, 3 );
 
     // Each node is drawn at a different locaiton
     GLuint locOffset = mShaderNodes.attributeLocation( "a_offset" );
@@ -323,20 +331,24 @@ void XMGLView3D::glDrawNetworkNodes( const QVector<QVector3D> &vertexData )
     mShaderNodes.setAttributeBuffer(locOffset,GL_FLOAT, 12*3*sizeof(GLfloat), 3);
     glVertexAttribDivisor( locOffset, 1 );
 
+    // TODO: get this and others from member
+    const static GLuint tristripIndex_size = 36;
+
     glDrawElementsInstanced(
-                GL_TRIANGLES,
-                triElements_size,
+                GL_TRIANGLE_STRIP,
+                tristripIndex_size,
                 GL_UNSIGNED_INT,
-                triElements,
+                (void*)0,               // zero-pointer for IBO
                 vertexData.size() );
 
     glVertexAttribDivisor( locOffset, 0 );
-    mShaderNodes.disableAttributeArray("a_vertex");
-    mShaderNodes.disableAttributeArray("a_normal");
-    mShaderNodes.disableAttributeArray(locOffset);
+    mShaderNodes.disableAttributeArray( "a_vertex" );
+    mShaderNodes.disableAttributeArray( "a_normal" );
+    mShaderNodes.disableAttributeArray( locOffset );
 
     mShaderNodes.release();
     m_vboNodes.release();
+    m_iboNodes.release();
 }
 
 

@@ -85,6 +85,7 @@ protected:
     QMatrix4x4 m_MVP;
     QMatrix3x3 m_Norm;
     QOpenGLBuffer m_vboNodes;
+    QOpenGLBuffer m_iboNodes;
 
 signals:
     void changed();
