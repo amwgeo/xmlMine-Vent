@@ -38,7 +38,8 @@
 
 
 XMGLView3D::XMGLView3D( QWidget *parent ):
-        QOpenGLWidget( parent )
+        QOpenGLWidget( parent ),
+        m_vboNodes( QOpenGLBuffer::VertexBuffer )
 {
     // TODO: memory leak or delete from parent?
     m_camera = new XMGLCamera( this );
@@ -224,6 +225,36 @@ void setupShaderProgramFromFiles(
 }
 
 
+void setupNodeVBO(
+        QOpenGLBuffer &vbo,
+        const QVector<QVector3D> &offsetVert )
+{
+    // ichosahedrons vertex/node, normal data
+    const float a = 0.525731112119134;
+    const float b = 0.850650808352040;
+    const static GLfloat ichosaVert[] = {
+                        0,a,b,   0,a,-b, 0,-a,b,
+                        0,-a,-b, a,b,0,  a,-b,0,
+                        -a,b,0,  -a,-b,0,b,0,a,
+                        -b,0,a,  b,0,-a, -b,0,-a };
+
+    vbo.bind();
+
+    // allocate space required
+    int offsetToOffsetVert = 12*3*sizeof(GLfloat);      // TODO: this should be a memeber of a class because it needs to be used elsewhere
+    vbo.allocate( offsetToOffsetVert + offsetVert.size()*3*sizeof(GLfloat) );
+
+    // store model space data (vertex/nodes and normal) at the top of the buffer
+    vbo.write( 0, ichosaVert, offsetToOffsetVert );
+
+    // store offset data (location of nodes in world space) at back of buffer
+    vbo.write( offsetToOffsetVert, offsetVert.constData(), offsetVert.size()*3*sizeof(GLfloat) );
+
+    vbo.release();
+
+}
+
+
 /// Set up the rendering context, define display lists etc.
 void XMGLView3D::initializeGL()
 {
@@ -237,6 +268,9 @@ void XMGLView3D::initializeGL()
 
     setupShaderProgramFromFiles( mShaderBasic, ":/shaders/basic.vert", ":/shaders/basic.frag", "mShaderBasic");
     setupShaderProgramFromFiles( mShaderNodes, ":/shaders/nodes.vert", ":/shaders/nodes.frag","mShaderNodes" );
+
+    m_vboNodes.create();
+    m_vboNodes.setUsagePattern( QOpenGLBuffer::DynamicDraw );
 }
 
 
@@ -256,15 +290,10 @@ void XMGLView3D::glDrawNetworkNodes( const QVector<QVector3D> &vertexData )
     //glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
     //glDrawArrays( GL_POINTS, 0, m_ventNet->m_junction.size() );
 
-    // draw ichosahedrons (new way)
-    const float a = 0.525731112119134;
-    const float b = 0.850650808352040;
-    const static GLfloat ichosaVert[] = {
-                        0,a,b,   0,a,-b, 0,-a,b,
-                        0,-a,-b, a,b,0,  a,-b,0,
-                        -a,b,0,  -a,-b,0,b,0,a,
-                        -b,0,a,  b,0,-a, -b,0,-a };
+    // TODO: this only needs to be done when model data changes; setup signals
+    setupNodeVBO( m_vboNodes, vertexData);
 
+    // draw ichosahedrons using VBO
     const static GLuint triElements[] = {
                         0,2,8,  0,8,4,  0,4,6,  0,6,9,  0,9,2,
                         1,10,3, 1,3,11, 1,11,6, 1,6,4,  1,4,10,
@@ -274,20 +303,24 @@ void XMGLView3D::glDrawNetworkNodes( const QVector<QVector3D> &vertexData )
 
     // load the shader and setup shader parameters
     mShaderNodes.bind();
+    m_vboNodes.bind();
+
     mShaderNodes.setUniformValue("u_matMVP", m_MVP);
     mShaderNodes.setUniformValue("u_matMV", m_MV);
     mShaderNodes.setUniformValue("u_matNorm", m_Norm);
-    mShaderNodes.enableAttributeArray("a_vertex");
-    mShaderNodes.setAttributeArray("a_vertex", ichosaVert, 3);
-    mShaderNodes.enableAttributeArray("a_normal");
-    mShaderNodes.setAttributeArray("a_normal", ichosaVert, 3);
-    mShaderNodes.setUniformValue("u_size",GLfloat(5));
+    mShaderNodes.setUniformValue("u_size", GLfloat(5));
     mShaderNodes.setUniformValue("u_coluorMaterial", QColor("darkred") );
+
+    mShaderNodes.enableAttributeArray("a_vertex");
+    mShaderNodes.enableAttributeArray("a_normal");
+    mShaderNodes.setAttributeBuffer("a_vertex", GL_FLOAT, 0, 3);
+    mShaderNodes.setAttributeBuffer("a_normal", GL_FLOAT, 0, 3);
 
     // Each node is drawn at a different locaiton
     GLuint locOffset = mShaderNodes.attributeLocation( "a_offset" );
     mShaderNodes.enableAttributeArray(locOffset);
-    mShaderNodes.setAttributeArray( locOffset, vertexData.constData() );
+    // TODO: get offset-to-offset from above ...
+    mShaderNodes.setAttributeBuffer(locOffset,GL_FLOAT, 12*3*sizeof(GLfloat), 3);
     glVertexAttribDivisor( locOffset, 1 );
 
     glDrawElementsInstanced(
@@ -301,6 +334,9 @@ void XMGLView3D::glDrawNetworkNodes( const QVector<QVector3D> &vertexData )
     mShaderNodes.disableAttributeArray("a_vertex");
     mShaderNodes.disableAttributeArray("a_normal");
     mShaderNodes.disableAttributeArray(locOffset);
+
+    mShaderNodes.release();
+    m_vboNodes.release();
 }
 
 

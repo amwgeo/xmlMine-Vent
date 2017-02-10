@@ -37,6 +37,7 @@
 #include <QOpenGLWidget>
 #include <QOpenGLShaderProgram>
 #include <QMatrix>
+#include <QOpenGLBuffer>
 
 #if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
     class XMGLView3D : public QOpenGLWidget, protected QOpenGLExtraFunctions
@@ -52,9 +53,6 @@ public:
 
     class XMVentNetwork* m_ventNet;
     class XMGLCamera* m_camera;
-    QMatrix4x4 m_MV;
-    QMatrix4x4 m_MVP;
-    QMatrix3x3 m_Norm;
 
     void glDrawNetworkModel();
     void glDrawNetworkNodes( const QVector<QVector3D> &vertexData );
@@ -81,6 +79,12 @@ protected:
 
     // Mouse Event Last Posision
     QPointF lastPos;
+
+    // OpenGL
+    QMatrix4x4 m_MV;
+    QMatrix4x4 m_MVP;
+    QMatrix3x3 m_Norm;
+    QOpenGLBuffer m_vboNodes;
 
 signals:
     void changed();
