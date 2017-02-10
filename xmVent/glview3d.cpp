@@ -274,16 +274,37 @@ void XMGLView3D::initializeGL()
     m_vboNodes.setUsagePattern( QOpenGLBuffer::DynamicDraw );
 
     // setup index buffer object
-    m_iboNodes.create();
-    m_iboNodes.setUsagePattern( QOpenGLBuffer::StaticDraw );
     const static GLuint tristripIndex[] = {
         0, 2, 8, 5, 10, 3, 1, 11, 6, 9, 0, 2,
         2, 0, 0, 8, 4, 10, 1, 1, 1, 6, 4, 0,
         0, 3, 3, 5, 7, 2, 9, 9, 9, 11, 7, 3
     };
+    m_iboNodes.create();
+    m_iboNodes.setUsagePattern( QOpenGLBuffer::StaticDraw );
     m_iboNodes.bind();
-    m_iboNodes.allocate( tristripIndex, sizeof(tristripIndex) );
+        m_iboNodes.allocate( tristripIndex, sizeof(tristripIndex) );
     m_iboNodes.release();
+
+    // setup vertex array object
+    m_vaoNodes.create();
+    m_vaoNodes.bind();
+        m_iboNodes.bind();
+        mShaderNodes.setUniformValue( "u_size", GLfloat(5.) );
+        mShaderNodes.setUniformValue( "u_coluorMaterial", QColor("darkred") );
+        mShaderNodes.enableAttributeArray( "a_vertex" );
+        mShaderNodes.enableAttributeArray( "a_normal" );
+        mShaderNodes.enableAttributeArray( "a_offset" );
+        m_vboNodes.bind();
+        mShaderNodes.setAttributeBuffer( "a_vertex", GL_FLOAT, 0, 3 );
+        mShaderNodes.setAttributeBuffer( "a_normal", GL_FLOAT, 0, 3 );
+        GLuint locOffset = mShaderNodes.attributeLocation( "a_offset" );
+        mShaderNodes.setAttributeBuffer(
+                    locOffset,
+                    GL_FLOAT,
+                    12*3*sizeof(GLfloat),   // TODO: get offset-to-offset from member variable
+                    3);
+        glVertexAttribDivisor( locOffset, 1 );
+    m_vaoNodes.release();
 }
 
 
@@ -306,49 +327,26 @@ void XMGLView3D::glDrawNetworkNodes( const QVector<QVector3D> &vertexData )
     // TODO: this only needs to be done when model data changes; setup signals
     setupNodeVBO( m_vboNodes, vertexData);
 
-    // draw ichosahedrons using VBO / IBO
-
-    // load the shader and setup shader parameters
+    // draw ichosahedrons using VAO / VBO / IBO
+    m_vaoNodes.bind();
     mShaderNodes.bind();
-    m_vboNodes.bind();
-    m_iboNodes.bind();
 
+    // set uniform values that are always changing ...
     mShaderNodes.setUniformValue( "u_matMVP", m_MVP );
     mShaderNodes.setUniformValue( "u_matMV", m_MV );
     mShaderNodes.setUniformValue( "u_matNorm", m_Norm );
-    mShaderNodes.setUniformValue( "u_size", GLfloat(5.) );
-    mShaderNodes.setUniformValue( "u_coluorMaterial", QColor("darkred") );
 
-    mShaderNodes.enableAttributeArray( "a_vertex" );
-    mShaderNodes.enableAttributeArray( "a_normal" );
-    mShaderNodes.setAttributeBuffer( "a_vertex", GL_FLOAT, 0, 3 );
-    mShaderNodes.setAttributeBuffer( "a_normal", GL_FLOAT, 0, 3 );
-
-    // Each node is drawn at a different locaiton
-    GLuint locOffset = mShaderNodes.attributeLocation( "a_offset" );
-    mShaderNodes.enableAttributeArray(locOffset);
-    // TODO: get offset-to-offset from above ...
-    mShaderNodes.setAttributeBuffer(locOffset,GL_FLOAT, 12*3*sizeof(GLfloat), 3);
-    glVertexAttribDivisor( locOffset, 1 );
-
-    // TODO: get this and others from member
-    const static GLuint tristripIndex_size = 36;
-
+    // draw elements ...
     glDrawElementsInstanced(
                 GL_TRIANGLE_STRIP,
-                tristripIndex_size,
+                36,                     // TODO: get "tristripIndex_size" from member variable
                 GL_UNSIGNED_INT,
                 (void*)0,               // zero-pointer for IBO
                 vertexData.size() );
 
-    glVertexAttribDivisor( locOffset, 0 );
-    mShaderNodes.disableAttributeArray( "a_vertex" );
-    mShaderNodes.disableAttributeArray( "a_normal" );
-    mShaderNodes.disableAttributeArray( locOffset );
-
+    // restore context
     mShaderNodes.release();
-    m_vboNodes.release();
-    m_iboNodes.release();
+    m_vaoNodes.release();
 }
 
 

@@ -38,6 +38,7 @@
 #include <QOpenGLShaderProgram>
 #include <QMatrix>
 #include <QOpenGLBuffer>
+#include <QOpenGLVertexArrayObject>
 
 #if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
     class XMGLView3D : public QOpenGLWidget, protected QOpenGLExtraFunctions
@@ -86,6 +87,7 @@ protected:
     QMatrix3x3 m_Norm;
     QOpenGLBuffer m_vboNodes;
     QOpenGLBuffer m_iboNodes;
+    QOpenGLVertexArrayObject m_vaoNodes;
 
 signals:
     void changed();
