@@ -28,7 +28,6 @@
 #include <QDebug>
 #include <QFileDialog>
 #include <QPainter>
-#include <QtMath>
 
 #include "glcamera.h"
 #include "xmVent-lib/network.h"
