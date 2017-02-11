@@ -91,6 +91,7 @@ void XMGLView3D::selectEvent(const QPoint &pos)
     farWorld /= farWorld.w();
 
     QVector3D ray(farWorld - nearWorld);
+    float distNearFar = ray.length();
     ray.normalize();
 
     QVector3D ptNear(nearWorld);
@@ -101,16 +102,19 @@ void XMGLView3D::selectEvent(const QPoint &pos)
         QVector3D u( m_ventNet->m_junction[i]->point() - ptNear );
         float dist = QVector3D::dotProduct(u, ray);
 
-        // TODO: eliminate square root for speed
+        // squared perpendicular distance to ray vector
         float perp2 = QVector3D::dotProduct(u, u) - dist*dist;
 
         // Tolerance test
         const float tolerance_limit = 0.0003;
         float tolerance = perp2 /dist / dist;    // ratio of (perp/dist)^2
 
-        // TODO: far test
-        if( dist >= 0 && tolerance<tolerance_limit && dist < bestValue ) {
-            // find closest junction; in front of near; within a narrow cone (tol)
+        // is this a closer point within the narrow tolerance cone
+        if( dist >= 0 &&
+                tolerance<tolerance_limit &&
+                dist < bestValue  &&
+                dist <= distNearFar )
+        {
             bestId = i;
             bestValue = dist;
         }
