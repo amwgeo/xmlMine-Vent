@@ -271,7 +271,9 @@ void XMGLView3D::initializeGL()
 
     // setup verte buffer object (data loaded later)
     m_vboNodes.create();
-    m_vboNodes.setUsagePattern( QOpenGLBuffer::DynamicDraw );
+    m_vboNodes.setUsagePattern( QOpenGLBuffer::StaticDraw );
+    // Considering QOpenGLBuffer::DynamicDraw, but populated once
+    // after an allocate so StaticDraw still probably is the best fit.
 
     // setup index buffer object
     const static GLuint tristripIndex[] = {
@@ -305,6 +307,10 @@ void XMGLView3D::initializeGL()
                     3);
         glVertexAttribDivisor( locOffset, 1 );
     m_vaoNodes.release();
+
+    // cleanup context for things not in VAO
+    m_iboNodes.release();
+    m_vboNodes.release();
 }
 
 
