@@ -46,3 +46,9 @@ SOURCES += main.cpp glcamera.cpp glview3d.cpp branchmodel.cpp junctionmodel.cpp 
 FORMS    += mainwindow.ui
 
 RESOURCES += xmVent.qrc
+
+DISTFILES += \
+    shaders/nodeshadow.vert \
+    shaders/nodeshadow.frag \
+    shaders/shadowkernel.vert \
+    shaders/shadowkernel.frag

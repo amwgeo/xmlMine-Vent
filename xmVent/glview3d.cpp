@@ -28,6 +28,8 @@
 #include <QDebug>
 #include <QFileDialog>
 #include <QPainter>
+#include <QOpenGLFramebufferObject>
+#include <QOpenGLPaintDevice>
 
 #include "glcamera.h"
 #include "xmVent-lib/network.h"
@@ -188,6 +190,43 @@ void XMGLView3D::pinchTriggered(QPinchGesture *gesture)
     }
 }
 
+void glCheckError(const char* locationName)
+{
+    GLenum error = GL_NO_ERROR;
+    do {
+        error = glGetError();
+        if( error != GL_NO_ERROR) {
+            const char *errortype = "Unknown";
+            switch( error ) {
+            case GL_INVALID_ENUM:
+                errortype = "GL_INVALID_ENUM";
+                break;
+            case GL_INVALID_VALUE:
+                errortype = "GL_INVALID_VALUE";
+                break;
+            case GL_INVALID_OPERATION:
+                errortype = "GL_INVALID_OPERATION";
+                break;
+            case GL_STACK_OVERFLOW:
+                errortype = "GL_STACK_OVERFLOW";
+                break;
+            case GL_STACK_UNDERFLOW:
+                errortype = "GL_STACK_UNDERFLOW";
+                break;
+            case GL_OUT_OF_MEMORY:
+                errortype = "GL_OUT_OF_MEMORY";
+                break;
+            case GL_TABLE_TOO_LARGE:
+                errortype = "GL_TABLE_TOO_LARGE";
+                break;
+            }
+            qDebug() << "GL Error:" << locationName << "::" << error << "(" << errortype << ")";
+
+        }
+    } while( error != GL_NO_ERROR );
+
+}
+
 
 void XMGLView3D::keyPressEvent( class QKeyEvent *event )
 {
@@ -226,6 +265,7 @@ void setupShaderProgramFromFiles(
     if( !shader.bind() ) {
         qFatal("Error binding shader (%s).", errorName);
     }
+    shader.release();   // clean up context
 }
 
 
@@ -262,15 +302,30 @@ void setupNodeVBO(
 void XMGLView3D::initializeGL()
 {
     initializeOpenGLFunctions();
-
-    glClearColor( 1., 1., 1., 1. );
-
     qDebug() << "GL Version: " << QString::fromLocal8Bit((const char*)glGetString(GL_VERSION));
     qDebug() << "GLSL Version: " << QString::fromLocal8Bit((const char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
     qDebug() << "GL Extensions: "  << QString::fromLocal8Bit((const char*)glGetString(GL_EXTENSIONS));
 
-    setupShaderProgramFromFiles( mShaderBasic, ":/shaders/basic.vert", ":/shaders/basic.frag", "mShaderBasic");
-    setupShaderProgramFromFiles( mShaderNodes, ":/shaders/nodes.vert", ":/shaders/nodes.frag","mShaderNodes" );
+    setupShaderProgramFromFiles(
+                mShaderBasic,
+                ":/shaders/basic.vert",
+                ":/shaders/basic.frag",
+                "mShaderBasic" );
+    setupShaderProgramFromFiles(
+                mShaderNodes,
+                ":/shaders/nodes.vert",
+                ":/shaders/nodes.frag",
+                "mShaderNodes" );
+    setupShaderProgramFromFiles(
+                mShaderNodeShadow,
+                ":/shaders/nodeshadow.vert",
+                ":/shaders/nodeshadow.frag",
+                "mShaderNodeShadow" );
+    setupShaderProgramFromFiles(
+                mShaderShadowKernel,
+                ":/shaders/shadowkernel.vert",
+                ":/shaders/shadowkernel.frag",
+                "mShaderShadowKernel" );
 
     // setup verte buffer object (data loaded later)
     m_vboNodes.create();
@@ -293,6 +348,7 @@ void XMGLView3D::initializeGL()
     // setup vertex array object
     m_vaoNodes.create();
     m_vaoNodes.bind();
+        mShaderNodes.bind();
         m_iboNodes.bind();
         mShaderNodes.setUniformValue( "u_size", GLfloat(5.) );
         mShaderNodes.setUniformValue( "u_coluorMaterial", QColor("darkred") );
@@ -312,15 +368,17 @@ void XMGLView3D::initializeGL()
     m_vaoNodes.release();
 
     // cleanup context for things not in VAO
+    mShaderNodes.release();
     m_iboNodes.release();
     m_vboNodes.release();
+
+    glCheckError( "initializeGL()" );
 }
 
 
 /// setup viewport, projection etc.
 void XMGLView3D::resizeGL(int width, int height)
 {
-    // TODO: Is this or otherwise needed in GLES?
     glViewport( 0, 0, width, height );
 }
 
@@ -332,9 +390,6 @@ void XMGLView3D::glDrawNetworkNodes( const QVector<QVector3D> &vertexData )
     //mShaderBasic.setUniformValue("pointSize", float(5.));
     //glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
     //glDrawArrays( GL_POINTS, 0, m_ventNet->m_junction.size() );
-
-    // TODO: this only needs to be done when model data changes; setup signals
-    setupNodeVBO( m_vboNodes, vertexData);
 
     // draw ichosahedrons using VAO / VBO / IBO
     m_vaoNodes.bind();
@@ -359,7 +414,7 @@ void XMGLView3D::glDrawNetworkNodes( const QVector<QVector3D> &vertexData )
 }
 
 
-void XMGLView3D::glDrawNetworkModel()
+void XMGLView3D::glDrawNetworkModel(QVector<QVector3D> &vertexData)
 {
     if(m_ventNet == 0 || m_ventNet->m_junction.size() == 0) return;
 
@@ -374,12 +429,6 @@ void XMGLView3D::glDrawNetworkModel()
     //QVector3D *data2 = &(m_ventNet->m_junction[0]->m_point);
     //QVector3D *data = (QVector3D*)(m_ventNet->m_junction.data() + offsetof(class XMVentJunction, m_point));
     //mShaderBasic.setAttributeArray("vertex", data, stride);
-
-    // copy out vertex data into convienient for purpose vector ...
-    QVector<QVector3D> vertexData;
-    for(int i=0; i< m_ventNet->m_junction.size(); i++ ) {
-        vertexData.append(m_ventNet->m_junction[i]->point());
-    }
 
     // copy out element data from branches
     QVector<GLuint> elements;
@@ -405,10 +454,44 @@ void XMGLView3D::glDrawNetworkModel()
 /// draw the scene
 void XMGLView3D::paintGL()
 {
+    glViewport( 0, 0, width(), height() );
+//    glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+
     m_MV = m_camera->glViewMatrix();
     m_MVP = m_camera->glProjMatrix( width(), height() ) * m_MV;
     m_Norm = m_MV.normalMatrix();
 
+    // //////////////////////////////////////////////////////////////////////////
+    // skip if no nodes to "select"
+    QOpenGLFramebufferObject fbo(
+                size(),
+                QOpenGLFramebufferObject::CombinedDepthStencil );
+    Q_ASSERT( fbo.isValid() );
+    if( m_ventNet->m_junction.size() > 0 ) {
+        fbo.bind();
+            // TODO: need this but it buggers up things outside FBO
+            glViewport( 0, 0, width(), height() );
+            glDepthRange( 0., 1. );     // TODO: is this the magic fix
+            qDebug() << "glDrawSelectShadow::glViewport: " << width() << height();
+
+            glClearColor( 0., 0., 0., 0. );
+            glClear( GL_COLOR_BUFFER_BIT & GL_DEPTH_BUFFER_BIT );
+            glDrawSelectShadowBuffer();
+        fbo.release();
+        QImage img = fbo.toImage();
+        //img.save("screenshot.png", "PNG");
+    }// /////////////////////////////////////////////////////////////////////////
+
+    // TODO: this only needs to be done when model data changes; setup signals
+    // copy out vertex data into convienient for purpose vector ...
+    QVector<QVector3D> vertexData;
+    for(int i=0; i< m_ventNet->m_junction.size(); i++ ) {
+        vertexData.append(m_ventNet->m_junction[i]->point());
+    }
+    setupNodeVBO( m_vboNodes, vertexData);
+
+    glDisable( GL_DEPTH_TEST );
+    glClear( GL_DEPTH_BUFFER_BIT );
     QPainter painter(this);
 
     // Draw gradient background
@@ -418,22 +501,68 @@ void XMGLView3D::paintGL()
     painter.setBrush( QBrush(linearGrad) );
     painter.drawRect( rect() );
 
-    // Draw 3D model
+    glCheckError( "painGL-poke1()" );
     painter.beginNativePainting();
+    glCheckError( "painGL-poke2()" );
+
+    glEnable( GL_BLEND );
+    glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+
+    // TODO: draw later and check depth buffers
+    // TODO: repackage this elsewhere ///////////////////////////////////////////
+    // draw selection halo / gaussian kernel
+    glDisable( GL_DEPTH_TEST );
+    // skip if no nodes to "select"
+    if( m_ventNet->m_junction.size() > 0 ) {
+        mShaderShadowKernel.bind();
+            glEnable( GL_TEXTURE_2D );
+            const GLfloat vertCoord[] = {
+                -1., 1.,
+                -1., -1.,
+                1., -1.,
+                1., 1. };
+            const GLfloat texCoord[] = {
+                0., 1.,
+                0., 0.,
+                1., 0.,
+                1., 1. };
+
+            mShaderShadowKernel.enableAttributeArray( "position" );
+            mShaderShadowKernel.enableAttributeArray( "texCoords" );
+            mShaderShadowKernel.setAttributeArray( "position", GL_FLOAT, vertCoord, 2 );
+            mShaderShadowKernel.setAttributeArray( "texCoords", GL_FLOAT, texCoord, 2 );
+
+            glActiveTexture( GL_TEXTURE0 );
+            glBindTexture( GL_TEXTURE_2D, fbo.texture() );
+            mShaderShadowKernel.setUniformValue( "screenTexture", 0 );
+
+            glDrawArrays( GL_QUADS, 0, 4 );
+
+            mShaderShadowKernel.disableAttributeArray( "position" );
+            mShaderShadowKernel.disableAttributeArray( "texCoords" );
+            glDisable( GL_TEXTURE_2D );
+        mShaderShadowKernel.release();
+    }// /////////////////////////////////////////////////////////////////////////
 
     // get ready for drawing GL
     glClear( GL_DEPTH_BUFFER_BIT );
     glEnable( GL_CULL_FACE );
     glEnable( GL_DEPTH_TEST );
 
-    glDrawNetworkModel();
+    // Draw 3D model
+    glDrawNetworkModel( vertexData );
 
     // return things to normal
     glDisable( GL_DEPTH_TEST );
     glDisable( GL_CULL_FACE );
 
-    painter.endNativePainting();
+    glDisable( GL_BLEND );
 
+    glCheckError( "painGL-poke3()" );
+    painter.endNativePainting();
+    glCheckError( "painGL-poke4()" );
+
+    // TODO: reenable this block ...
     // Draw Junction Id
     painter.setPen( Qt::black );
     painter.setFont( QFont() );
@@ -451,6 +580,10 @@ void XMGLView3D::paintGL()
     }
 
     painter.end();
+
+//    glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+
+    glCheckError( "painGL()" );
 }
 
 
@@ -505,4 +638,31 @@ void XMGLView3D::setHorizontalAngle( int value )
 void XMGLView3D::dependentChanged()
 {
     emit changed();
+}
+
+
+void XMGLView3D::glDrawSelectShadowBuffer()
+{
+    mShaderNodeShadow.bind();
+    m_vboNodes.bind();
+    m_iboNodes.bind();
+
+    mShaderNodeShadow.setUniformValue( "u_matMVP", m_MVP );
+    mShaderNodeShadow.setUniformValue( "u_size", float(5.) );
+    mShaderNodeShadow.setUniformValue( "u_offset", m_ventNet->m_junction[0]->point() );
+    mShaderNodeShadow.setUniformValue( "u_color", 1.f, 1.f, 1.f, 1.f );
+    mShaderNodeShadow.enableAttributeArray( "a_vertex" );
+    mShaderNodeShadow.setAttributeBuffer( "a_vertex", GL_FLOAT, 0, 3 );
+
+    glDrawElements(
+                GL_TRIANGLE_STRIP,
+                36,             // TODO: get "tristripIndex_size" from member variable
+                GL_UNSIGNED_INT,
+                0 );
+
+    // cleanup context
+    mShaderNodeShadow.disableAttributeArray( "a_vertex" );
+    m_iboNodes.release();
+    m_vboNodes.release();
+    mShaderNodeShadow.release();
 }

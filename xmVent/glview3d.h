@@ -55,7 +55,7 @@ public:
     class XMVentNetwork* m_ventNet;
     class XMGLCamera* m_camera;
 
-    void glDrawNetworkModel();
+    void glDrawNetworkModel( QVector<QVector3D> &vertexData );
     void glDrawNetworkNodes( const QVector<QVector3D> &vertexData );
 
 protected:
@@ -69,6 +69,8 @@ protected:
     void pinchTriggered( class QPinchGesture *gesture );
     void keyPressEvent( class QKeyEvent *event );
 
+    void glDrawSelectShadowBuffer();
+
     // OpenGL Widget
     void initializeGL();
     void resizeGL( int width, int height );
@@ -77,6 +79,8 @@ protected:
     // OpenGL ES Shader
     QOpenGLShaderProgram mShaderBasic;
     QOpenGLShaderProgram mShaderNodes;
+    QOpenGLShaderProgram mShaderNodeShadow;
+    QOpenGLShaderProgram mShaderShadowKernel;
 
     // Mouse Event Last Posision
     QPointF lastPos;

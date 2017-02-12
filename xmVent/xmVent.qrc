@@ -7,5 +7,9 @@
         <file>shaders/basic.vert</file>
         <file>shaders/nodes.frag</file>
         <file>shaders/nodes.vert</file>
+        <file>shaders/nodeshadow.vert</file>
+        <file>shaders/nodeshadow.frag</file>
+        <file>shaders/shadowkernel.frag</file>
+        <file>shaders/shadowkernel.vert</file>
     </qresource>
 </RCC>
