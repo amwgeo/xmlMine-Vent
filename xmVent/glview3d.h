@@ -68,6 +68,7 @@ protected:
     bool gestureEvent( class QGestureEvent *event );
     void pinchTriggered( class QPinchGesture *gesture );
     void keyPressEvent( class QKeyEvent *event );
+    void screenshot();
 
     void glDrawSelectShadowBuffer();
     void glDrawSelectShadowToFBO();

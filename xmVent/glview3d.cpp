@@ -240,6 +240,10 @@ void XMGLView3D::keyPressEvent( class QKeyEvent *event )
         m_camera->rotateVertical( -5. );
         break;
 
+    case Qt::Key_W:
+        screenshot();
+        break;
+
     default:
         QOpenGLWidget::keyPressEvent( event );
         break;
@@ -601,7 +605,7 @@ void XMGLView3D::glDrawSelectShadowBuffer()
     mShaderNodeShadow.setUniformValue( "u_matMVP", m_MVP );
     mShaderNodeShadow.setUniformValue( "u_size", float(5.) );
     mShaderNodeShadow.setUniformValue( "u_offset", m_ventNet->m_junction[0]->point() );
-    mShaderNodeShadow.setUniformValue( "u_color", 1.f, 1.f, 1.f, 1.f );
+    mShaderNodeShadow.setUniformValue( "u_color", QColor("yellow") ); //1.f, 1.f, 1.f, 1.f );
     mShaderNodeShadow.enableAttributeArray( "a_vertex" );
     mShaderNodeShadow.setAttributeBuffer( "a_vertex", GL_FLOAT, 0, 3 );
 
@@ -638,7 +642,7 @@ void XMGLView3D::glDrawSelectShadowToFBO()
             glDrawSelectShadowBuffer();
         fboShadow->release();
         QImage img = fboShadow->toImage();
-        //img.save("screenshot.png", "PNG");
+        img.save( "fbo.png", "PNG" );
     }
 }
 
@@ -678,4 +682,11 @@ void XMGLView3D::glDrawSelectShadowFBOKernel()
             glDisable( GL_TEXTURE_2D );
         mShaderShadowKernel.release();
     }
+}
+
+
+void XMGLView3D::screenshot()
+{
+    QImage img = this->grabFramebuffer();
+    img.save( "screenshot.png", "PNG" );
 }
