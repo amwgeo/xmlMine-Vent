@@ -6,21 +6,28 @@ uniform sampler2D screenTexture;
 
 varying vec2 TexCoords;
 
-const float kernel[9] = float[](
-    1./16., 2./16., 1./16.,
-    2./16., 4./16., 2./16.,
-    1./16., 2./16., 1./16. );
+const float kernel[25] = float[](
+        0.f/80.f, 1.f/80.f,  2.f/80.f, 1.f/80.f, 0.f/80.f,
+        1.f/80.f, 4.f/80.f,  8.f/80.f, 4.f/80.f, 1.f/80.f,
+        2.f/80.f, 8.f/80.f, 16.f/80.f, 8.f/80.f, 2.f/80.f,
+        1.f/80.f, 4.f/80.f,  8.f/80.f, 4.f/80.f, 1.f/80.f,
+        0.f/80.f, 1.f/80.f,  2.f/80.f, 1.f/80.f, 0.f/80.f );
 
-const vec2 offsets[9] = vec2[](
-    vec2(-offset, offset),  // top-left
-    vec2(0.0f,    offset),  // top-center
-    vec2(offset,  offset),  // top-right
-    vec2(-offset, 0.0f),    // center-left
-    vec2(0.0f,    0.0f),    // center-center
-    vec2(offset,  0.0f),    // center-right
-    vec2(-offset, -offset), // bottom-left
-    vec2(0.0f,    -offset), // bottom-center
-    vec2(offset,  -offset)  // bottom-right
+const vec2 offsets[25] = vec2[](
+    vec2(-2.f*offset, 2.f*offset),  vec2(-2.f*offset, offset),  vec2(-2.f*offset, 0.f),
+    vec2(-2.f*offset, -offset),  vec2(-2.f*offset, -2.f*offset),
+
+    vec2(-offset, 2.f*offset),  vec2(-offset, offset),  vec2(-offset, 0.f),
+    vec2(-offset, -offset),  vec2(-offset, -2.f*offset),
+
+    vec2(0.f, 2.f*offset),  vec2(0.f, offset),  vec2(0.f, 0.f),
+    vec2(0.f, -offset),  vec2(0.f, -2.f*offset),
+
+    vec2(offset, 2.f*offset),  vec2(offset, offset),  vec2(offset, 0.f),
+    vec2(offset, -offset),  vec2(offset, -2.f*offset),
+
+    vec2(2.f*offset, 2.f*offset),  vec2(2.f*offset, offset),  vec2(2.f*offset, 0.f),
+    vec2(2.f*offset, -offset),  vec2(2.f*offset, -2.f*offset)
 );
 
 
@@ -28,7 +35,7 @@ void main()
 {
     //gl_FragColor = texture2D(screenTexture, TexCoords);
     vec4 color = vec4(0.);
-    for( int i=0; i<9; i++){
+    for( int i=0; i<25; i++){
         color += kernel[i] * texture2D(screenTexture, TexCoords + offsets[i]);
     }
     gl_FragColor = color;
