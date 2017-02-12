@@ -478,7 +478,7 @@ void XMGLView3D::paintGL()
             glViewport( 0, 0, width(), height() );
 
             glClearColor( 0., 0., 0., 0. );
-            glClear( GL_COLOR_BUFFER_BIT & GL_DEPTH_BUFFER_BIT );
+            glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
             glDrawSelectShadowBuffer();
         fboShadow->release();
         QImage img = fboShadow->toImage();
