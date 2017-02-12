@@ -108,7 +108,7 @@ void XMGLView3D::selectEvent(const QPoint &pos)
         float perp2 = QVector3D::dotProduct(u, u) - dist*dist;
 
         // Tolerance test
-        const float tolerance_limit = 0.0003;
+        const float tolerance_limit = 0.0003f;
         float tolerance = perp2 /dist / dist;    // ratio of (perp/dist)^2
 
         // is this a closer point within the narrow tolerance cone
@@ -273,8 +273,8 @@ void setupNodeVBO(
         const QVector<QVector3D> &offsetVert )
 {
     // ichosahedrons vertex/node, normal data
-    const float a = 0.525731112119134;
-    const float b = 0.850650808352040;
+    const float a = 0.525731112119134f;
+    const float b = 0.850650808352040f;
     const static GLfloat ichosaVert[] = {
                         0,a,b,   0,a,-b, 0,-a,b,
                         0,-a,-b, a,b,0,  a,-b,0,

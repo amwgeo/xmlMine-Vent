@@ -30,14 +30,14 @@ using namespace std;
 XMGLCamera::XMGLCamera(QObject *parent) :
     QObject(parent)
 {
-    m_azimuth = 30.;
-    m_distance = 10.;
-    m_zenith = 80.;
-    m_x = 0.;
-    m_y = 0.;
-    m_z = 0.;
-    m_aspect = 4. / 3.;
-    m_horizontalFOV = 45.;
+    m_azimuth = 30.f;
+    m_distance = 10.f;
+    m_zenith = 80.f;
+    m_x = 0.f;
+    m_y = 0.f;
+    m_z = 0.f;
+    m_aspect = 4.f / 3.f;
+    m_horizontalFOV = 45.f;
 }
 
 
