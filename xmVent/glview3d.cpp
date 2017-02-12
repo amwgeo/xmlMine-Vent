@@ -470,7 +470,6 @@ void XMGLView3D::paintGL()
         fbo.bind();
             // TODO: need this but it buggers up things outside FBO
             glViewport( 0, 0, width(), height() );
-            qDebug() << "glDrawSelectShadow::glViewport: " << width() << height();
 
             glClearColor( 0., 0., 0., 0. );
             glClear( GL_COLOR_BUFFER_BIT & GL_DEPTH_BUFFER_BIT );
