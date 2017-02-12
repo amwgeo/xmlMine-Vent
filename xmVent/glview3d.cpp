@@ -190,7 +190,7 @@ void XMGLView3D::pinchTriggered(QPinchGesture *gesture)
     }
 }
 
-void glCheckError(const char* locationName)
+void XMGLView3D::glCheckError(const char* locationName)
 {
     GLenum error = GL_NO_ERROR;
     do {
@@ -224,7 +224,6 @@ void glCheckError(const char* locationName)
 
         }
     } while( error != GL_NO_ERROR );
-
 }
 
 
@@ -471,7 +470,6 @@ void XMGLView3D::paintGL()
         fbo.bind();
             // TODO: need this but it buggers up things outside FBO
             glViewport( 0, 0, width(), height() );
-            glDepthRange( 0., 1. );     // TODO: is this the magic fix
             qDebug() << "glDrawSelectShadow::glViewport: " << width() << height();
 
             glClearColor( 0., 0., 0., 0. );

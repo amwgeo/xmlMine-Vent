@@ -70,6 +70,7 @@ protected:
     void keyPressEvent( class QKeyEvent *event );
 
     void glDrawSelectShadowBuffer();
+    void glCheckError(const char* locationName);
 
     // OpenGL Widget
     void initializeGL();
