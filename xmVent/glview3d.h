@@ -90,6 +90,7 @@ protected:
     QMatrix4x4 m_MV;
     QMatrix4x4 m_MVP;
     QMatrix3x3 m_Norm;
+    class QOpenGLFramebufferObject* fboShadow;
     QOpenGLBuffer m_vboNodes;
     QOpenGLBuffer m_iboNodes;
     QOpenGLVertexArrayObject m_vaoNodes;

@@ -43,6 +43,8 @@ XMGLView3D::XMGLView3D( QWidget *parent ):
         m_vboNodes( QOpenGLBuffer::VertexBuffer ),
         m_iboNodes( QOpenGLBuffer::IndexBuffer )
 {
+    fboShadow = 0;
+
     // TODO: memory leak or delete from parent?
     m_camera = new XMGLCamera( this );
     connect( m_camera, SIGNAL(changed()), this, SLOT(update()) );
@@ -379,6 +381,8 @@ void XMGLView3D::initializeGL()
 void XMGLView3D::resizeGL(int width, int height)
 {
     glViewport( 0, 0, width, height );
+    delete fboShadow;
+    fboShadow = 0;
 }
 
 
@@ -462,20 +466,22 @@ void XMGLView3D::paintGL()
 
     // //////////////////////////////////////////////////////////////////////////
     // skip if no nodes to "select"
-    QOpenGLFramebufferObject fbo(
-                size(),
-                QOpenGLFramebufferObject::CombinedDepthStencil );
-    Q_ASSERT( fbo.isValid() );
     if( m_ventNet->m_junction.size() > 0 ) {
-        fbo.bind();
-            // TODO: need this but it buggers up things outside FBO
+        if( fboShadow == 0 ) {
+            // TODO: need to delete fboShadow in destructor
+            fboShadow = new QOpenGLFramebufferObject(
+                        size(),
+                        QOpenGLFramebufferObject::CombinedDepthStencil );
+        }
+        Q_ASSERT( fboShadow->isValid() );
+        fboShadow->bind();
             glViewport( 0, 0, width(), height() );
 
             glClearColor( 0., 0., 0., 0. );
             glClear( GL_COLOR_BUFFER_BIT & GL_DEPTH_BUFFER_BIT );
             glDrawSelectShadowBuffer();
-        fbo.release();
-        QImage img = fbo.toImage();
+        fboShadow->release();
+        QImage img = fboShadow->toImage();
         //img.save("screenshot.png", "PNG");
     }// /////////////////////////////////////////////////////////////////////////
 
@@ -530,7 +536,7 @@ void XMGLView3D::paintGL()
             mShaderShadowKernel.setAttributeArray( "texCoords", GL_FLOAT, texCoord, 2 );
 
             glActiveTexture( GL_TEXTURE0 );
-            glBindTexture( GL_TEXTURE_2D, fbo.texture() );
+            glBindTexture( GL_TEXTURE_2D, fboShadow->texture() );
             mShaderShadowKernel.setUniformValue( "screenTexture", 0 );
 
             glDrawArrays( GL_QUADS, 0, 4 );
