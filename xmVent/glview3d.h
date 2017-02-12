@@ -70,6 +70,8 @@ protected:
     void keyPressEvent( class QKeyEvent *event );
 
     void glDrawSelectShadowBuffer();
+    void glDrawSelectShadowToFBO();
+    void glDrawSelectShadowFBOKernel();
     void glCheckError(const char* locationName);
 
     // OpenGL Widget

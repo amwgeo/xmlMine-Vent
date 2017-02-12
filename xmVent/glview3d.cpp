@@ -464,26 +464,7 @@ void XMGLView3D::paintGL()
     m_MVP = m_camera->glProjMatrix( width(), height() ) * m_MV;
     m_Norm = m_MV.normalMatrix();
 
-    // //////////////////////////////////////////////////////////////////////////
-    // skip if no nodes to "select"
-    if( m_ventNet->m_junction.size() > 0 ) {
-        if( fboShadow == 0 ) {
-            // TODO: need to delete fboShadow in destructor
-            fboShadow = new QOpenGLFramebufferObject(
-                        size(),
-                        QOpenGLFramebufferObject::CombinedDepthStencil );
-        }
-        Q_ASSERT( fboShadow->isValid() );
-        fboShadow->bind();
-            glViewport( 0, 0, width(), height() );
-
-            glClearColor( 0., 0., 0., 0. );
-            glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-            glDrawSelectShadowBuffer();
-        fboShadow->release();
-        QImage img = fboShadow->toImage();
-        //img.save("screenshot.png", "PNG");
-    }// /////////////////////////////////////////////////////////////////////////
+    glDrawSelectShadowToFBO();
 
     // TODO: this only needs to be done when model data changes; setup signals
     // copy out vertex data into convienient for purpose vector ...
@@ -512,40 +493,7 @@ void XMGLView3D::paintGL()
     glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
     // TODO: draw later and check depth buffers
-    // TODO: repackage this elsewhere ///////////////////////////////////////////
-    // draw selection halo / gaussian kernel
-    glDisable( GL_DEPTH_TEST );
-    // skip if no nodes to "select"
-    if( m_ventNet->m_junction.size() > 0 ) {
-        mShaderShadowKernel.bind();
-            glEnable( GL_TEXTURE_2D );
-            const GLfloat vertCoord[] = {
-                -1., 1.,
-                -1., -1.,
-                1., -1.,
-                1., 1. };
-            const GLfloat texCoord[] = {
-                0., 1.,
-                0., 0.,
-                1., 0.,
-                1., 1. };
-
-            mShaderShadowKernel.enableAttributeArray( "position" );
-            mShaderShadowKernel.enableAttributeArray( "texCoords" );
-            mShaderShadowKernel.setAttributeArray( "position", GL_FLOAT, vertCoord, 2 );
-            mShaderShadowKernel.setAttributeArray( "texCoords", GL_FLOAT, texCoord, 2 );
-
-            glActiveTexture( GL_TEXTURE0 );
-            glBindTexture( GL_TEXTURE_2D, fboShadow->texture() );
-            mShaderShadowKernel.setUniformValue( "screenTexture", 0 );
-
-            glDrawArrays( GL_QUADS, 0, 4 );
-
-            mShaderShadowKernel.disableAttributeArray( "position" );
-            mShaderShadowKernel.disableAttributeArray( "texCoords" );
-            glDisable( GL_TEXTURE_2D );
-        mShaderShadowKernel.release();
-    }// /////////////////////////////////////////////////////////////////////////
+    glDrawSelectShadowFBOKernel();
 
     // get ready for drawing GL
     glClear( GL_DEPTH_BUFFER_BIT );
@@ -668,4 +616,66 @@ void XMGLView3D::glDrawSelectShadowBuffer()
     m_iboNodes.release();
     m_vboNodes.release();
     mShaderNodeShadow.release();
+}
+
+
+void XMGLView3D::glDrawSelectShadowToFBO()
+{
+    // skip if no nodes to "select"
+    if( m_ventNet->m_junction.size() > 0 ) {
+        if( fboShadow == 0 ) {
+            // TODO: need to delete fboShadow in destructor
+            fboShadow = new QOpenGLFramebufferObject(
+                        size(),
+                        QOpenGLFramebufferObject::CombinedDepthStencil );
+        }
+        Q_ASSERT( fboShadow->isValid() );
+        fboShadow->bind();
+            glViewport( 0, 0, width(), height() );
+
+            glClearColor( 0., 0., 0., 0. );
+            glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+            glDrawSelectShadowBuffer();
+        fboShadow->release();
+        QImage img = fboShadow->toImage();
+        //img.save("screenshot.png", "PNG");
+    }
+}
+
+
+void XMGLView3D::glDrawSelectShadowFBOKernel()
+{
+    // draw selection halo / gaussian kernel
+    glDisable( GL_DEPTH_TEST );
+    // skip if no nodes to "select"
+    if( m_ventNet->m_junction.size() > 0 ) {
+        mShaderShadowKernel.bind();
+            glEnable( GL_TEXTURE_2D );
+            const GLfloat vertCoord[] = {
+                -1., 1.,
+                -1., -1.,
+                1., -1.,
+                1., 1. };
+            const GLfloat texCoord[] = {
+                0., 1.,
+                0., 0.,
+                1., 0.,
+                1., 1. };
+
+            mShaderShadowKernel.enableAttributeArray( "position" );
+            mShaderShadowKernel.enableAttributeArray( "texCoords" );
+            mShaderShadowKernel.setAttributeArray( "position", GL_FLOAT, vertCoord, 2 );
+            mShaderShadowKernel.setAttributeArray( "texCoords", GL_FLOAT, texCoord, 2 );
+
+            glActiveTexture( GL_TEXTURE0 );
+            glBindTexture( GL_TEXTURE_2D, fboShadow->texture() );
+            mShaderShadowKernel.setUniformValue( "screenTexture", 0 );
+
+            glDrawArrays( GL_QUADS, 0, 4 );
+
+            mShaderShadowKernel.disableAttributeArray( "position" );
+            mShaderShadowKernel.disableAttributeArray( "texCoords" );
+            glDisable( GL_TEXTURE_2D );
+        mShaderShadowKernel.release();
+    }
 }
