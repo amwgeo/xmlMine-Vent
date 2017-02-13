@@ -494,7 +494,12 @@ void XMGLView3D::paintGL()
     glCheckError( "painGL-poke2()" );
 
     glEnable( GL_BLEND );
-    glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+    glBlendEquationSeparate( GL_FUNC_ADD, GL_FUNC_ADD );
+    glBlendFuncSeparate(
+                GL_SRC_ALPHA,
+                GL_ONE_MINUS_SRC_ALPHA,
+                GL_SRC_ALPHA,
+                GL_ONE_MINUS_SRC_ALPHA);
 
     // TODO: draw later and check depth buffers
     glDrawSelectShadowFBOKernel();
@@ -605,7 +610,7 @@ void XMGLView3D::glDrawSelectShadowBuffer()
     mShaderNodeShadow.setUniformValue( "u_matMVP", m_MVP );
     mShaderNodeShadow.setUniformValue( "u_size", float(5.) );
     mShaderNodeShadow.setUniformValue( "u_offset", m_ventNet->m_junction[0]->point() );
-    mShaderNodeShadow.setUniformValue( "u_color", QColor("yellow") ); //1.f, 1.f, 1.f, 1.f );
+    mShaderNodeShadow.setUniformValue( "u_color", 1.f, 1.f, 1.f, 1.f );
     mShaderNodeShadow.enableAttributeArray( "a_vertex" );
     mShaderNodeShadow.setAttributeBuffer( "a_vertex", GL_FLOAT, 0, 3 );
 
@@ -641,8 +646,8 @@ void XMGLView3D::glDrawSelectShadowToFBO()
             glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
             glDrawSelectShadowBuffer();
         fboShadow->release();
-        QImage img = fboShadow->toImage();
-        img.save( "fbo.png", "PNG" );
+        //QImage img = fboShadow->toImage();
+        //img.save( "fbo.png", "PNG" );
     }
 }
 
