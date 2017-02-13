@@ -498,8 +498,8 @@ void XMGLView3D::paintGL()
     glBlendFuncSeparate(
                 GL_SRC_ALPHA,
                 GL_ONE,
-                GL_SRC_ALPHA,
-                GL_ONE_MINUS_SRC_ALPHA);
+                GL_ZERO,
+                GL_ONE );
 
     // TODO: draw later and check depth buffers
     glDrawSelectShadowFBOKernel();
