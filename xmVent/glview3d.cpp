@@ -497,7 +497,7 @@ void XMGLView3D::paintGL()
     glBlendEquationSeparate( GL_FUNC_ADD, GL_FUNC_ADD );
     glBlendFuncSeparate(
                 GL_SRC_ALPHA,
-                GL_ONE_MINUS_SRC_ALPHA,
+                GL_ONE,
                 GL_SRC_ALPHA,
                 GL_ONE_MINUS_SRC_ALPHA);
 
@@ -505,6 +505,11 @@ void XMGLView3D::paintGL()
     glDrawSelectShadowFBOKernel();
 
     // get ready for drawing GL
+    glBlendFuncSeparate(
+                GL_SRC_ALPHA,
+                GL_ONE_MINUS_SRC_ALPHA,
+                GL_SRC_ALPHA,
+                GL_ONE_MINUS_SRC_ALPHA);
     glClear( GL_DEPTH_BUFFER_BIT );
     glEnable( GL_CULL_FACE );
     glEnable( GL_DEPTH_TEST );
